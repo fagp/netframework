@@ -1,0 +1,9 @@
+{
+  "blur":
+  {
+    "root": "/media/user/DEAE1704AE16D4BD/Documents/FIDEL/viisar_cinmoto-deepblur/db/test",
+    "ifolder": "",
+    "ext": "jpg",
+    "transform_param": "RandomCrop((200,200)),Resize(200),ToTensor()"
+  }
+}

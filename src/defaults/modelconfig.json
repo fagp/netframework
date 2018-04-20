@@ -1,0 +1,8 @@
+{
+  "vgg16_2":
+  {
+    "arch":"VGG",
+    "vgg_name":"VGG16",
+    "num_class":"2"
+  }
+}
