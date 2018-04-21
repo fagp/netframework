@@ -1,4 +1,4 @@
-# bbsort
+# Pytorch NetFramework
 For dataset specifications:
 
 src/defaults/dataconfig_train.json
@@ -21,7 +21,19 @@ src/models/loadmodel.py
 
 -implement customs architectures in src/models/arch/*.py
 
--include import to .arch.[archname] in src/models/loadmodel.py where archname is network module name
-
 -model params inits must be defined using modelconfig.json file for default and --modelparam argument for experiment.
+
+
+For loss specifications:
+
+src/defaults/metrics.json
+src/loss/selectloss.py
+src/loss/lossfunc.py
+
+-implement customs loss in src/loss/lossfunc.py
+
+-include loss function in src/loss/selectloss.py
+
+-list others metrics src/defaults/metrics.json
+
 

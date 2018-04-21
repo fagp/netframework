@@ -2,6 +2,7 @@
   "vgg16_2":
   {
     "arch":"VGG",
+    "module": "arch.vgg",
     "vgg_name":"VGG16",
     "num_class":"2"
   }

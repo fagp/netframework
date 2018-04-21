@@ -2,6 +2,7 @@ from netutil.NetFramework import *
 import argparse
 import json
 import time
+from utils.utils import Decoder
 
 def main():
     # Common params
@@ -28,7 +29,7 @@ def main():
     parser.add_argument('--optimizer', nargs='?', type=str, default='RMSprop', help='Optimizer to use')
     parser.add_argument('--optimizerparam', type=str, default='{}', help='Experiment optimizer parameters')
     parser.add_argument('--lrschedule', nargs='?', type=str, default='none', help='LR Schedule to use')
-    parser.add_argument('--loss', nargs='?', type=str, default='CE', help='Loss function to use')
+    parser.add_argument('--loss', nargs='?', type=str, default='ce', help='Loss function to use')
     parser.add_argument('--lossparam', type=str, default='{}', help='Loss function parameters')
     parser.add_argument('--resume', action='store_true', help='Resume training')
     
@@ -47,10 +48,10 @@ def main():
     ################################################################################################
 
 
-    args.lossparam=json.loads(args.lossparam.replace("'","\""))
-    args.datasetparam=json.loads(args.datasetparam.replace("'","\""))
-    args.modelparam=json.loads(args.modelparam.replace("'","\""))
-    args.optimizerparam=json.loads(args.optimizerparam.replace("'","\""))
+    args.lossparam=json.loads(args.lossparam.replace("'","\""),cls=Decoder)
+    args.datasetparam=json.loads(args.datasetparam.replace("'","\""),cls=Decoder)
+    args.modelparam=json.loads(args.modelparam.replace("'","\""),cls=Decoder)
+    args.optimizerparam=json.loads(args.optimizerparam.replace("'","\""),cls=Decoder)
 
     # create outputs folders
     root='../out'

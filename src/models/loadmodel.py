@@ -1,21 +1,10 @@
-from .arch.vgg import *
-from .arch.dpn import *
-from .arch.lenet import *
-from .arch.senet import *
-from .arch.resnet import *
-from .arch.resnext import *
-from .arch.densenet import *
-from .arch.googlenet import *
-from .arch.mobilenet import *
-from .arch.shufflenet import *
-from .arch.preact_resnet import *
-
-#from utils.utils import loadnet
 import json
 import torch
 from torch import nn
 from torch.nn import init
 import torch.backends.cudnn as cudnn
+from utils.utils import Decoder
+from utils.utils import get_class
 
 
 def loadmodel(modelname,experimentparams,use_cuda=False,use_parallel=False,config_file='defaults/modelconfig.json'):
@@ -26,15 +15,14 @@ def loadmodel(modelname,experimentparams,use_cuda=False,use_parallel=False,confi
     arch=model_props['arch']
     model_props.pop('arch',None)
 
+    module=model_props['module']
+    model_props.pop('module',None)
+
     for key,value in experimentparams.items():
         model_props[key]=value
 
-    modelparams=arch+'('
-    for key,value in model_props.items():
-        modelparams=modelparams+key+'=\''+value+'\','
-    modelparams=modelparams[:-1]+')'
-    
-    net = eval(modelparams)
+    m=get_class('models.'+module+'.'+arch)
+    net = m(**model_props)
 
     if torch.cuda.is_available() and use_cuda:
         net=net.cuda()
@@ -48,7 +36,7 @@ def loadmodel(modelname,experimentparams,use_cuda=False,use_parallel=False,confi
     return net,arch
 
 def get_model_path(name, config_file='defaults/modelconfig.json'):
-    model_config = json.load(open(config_file))
+    model_config = json.load(open(config_file),cls=Decoder)
     if name not in model_config:
         raise 'Model '+name+' not found in '+config_file
     return model_config[name]
