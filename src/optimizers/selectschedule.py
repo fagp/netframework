@@ -1,7 +1,5 @@
 
-def selectschedule(schedulename,optimizer):
-    print('LR Schedule: ',schedulename)
-    
+def selectschedule(schedulename,optimizer):   
     if schedulename == 'rop':
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max',patience=20,verbose=1,factor=0.05)
     elif schedulename == 'step':
@@ -9,7 +7,6 @@ def selectschedule(schedulename,optimizer):
     elif schedulename == 'exp':
         torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99 )
     else:
-        print('Warning: none schedule selected')
         scheduler = emptyschedule()
 
     return scheduler

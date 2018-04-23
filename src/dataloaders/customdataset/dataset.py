@@ -6,13 +6,14 @@ import torch
 from torch.autograd import Variable
 
 class cdataset(data.Dataset):
-    def __init__(self, root, ext='jpg', ifolder='image', transform_param=None,burstsize='14'):
+    def __init__(self, root, ext='jpg', ifolder='image', transform_param=None,datasize=100):
         self.root = root #root path
+        self.datasize=datasize
         self.transform_param=transform_param #transforms
         self.dataprov = imageProvide( self.root, fn_image=ifolder,ext=ext) #image provider
 
     def __len__(self):
-        return 100#self.dataprov.num
+        return self.datasize#self.dataprov.num
 
     def __getitem__(self, index):
         np.random.seed( random.randint(0, 2**32))

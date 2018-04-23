@@ -4,6 +4,16 @@
     "root": "/home/fillo/Documents/motorola/bbsort/data/train",
     "ifolder": "",
     "ext": "jpg",
+    "datasize":"20",
+    "transform_param": "RandomCrop((200,200)), RandomFlip(0.5), Resize(200), ToTensor()",
+    "module":"customdataset"
+  },
+  "blurmoto":
+  {
+    "root": "/media/user/DEAE1704AE16D4BD/Documents/FIDEL/viisar_cinmoto-deepblur/db/train",
+    "ifolder": "",
+    "ext": "jpg",
+    "datasize":"20",
     "transform_param": "RandomCrop((200,200)), RandomFlip(0.5), Resize(200), ToTensor()",
     "module":"customdataset"
   }

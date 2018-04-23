@@ -66,19 +66,22 @@ class HeatMapVisdom(object):
         self.env = env_name
         self.hmaps = {}
     
-    def show(self, title, image):
+    def show(self, title, image, colormap='Viridis',scale=1):
+        if scale!=1:
+            image=rescale(image,scale,preserve_range=True)
+
         if title not in self.hmaps:
             self.hmaps[title] = self.vis.heatmap(
                 image, 
                 env=self.env, 
-                opts=dict(title=title
+                opts=dict(title=title,colormap=colormap
             ))
         else:
             self.vis.heatmap(
                 image,
                 env=self.env, 
                 win=self.hmaps[title], 
-                opts=dict(title=title
+                opts=dict(title=title,colormap=colormap
             ))
 
 class TextVisdom(object):

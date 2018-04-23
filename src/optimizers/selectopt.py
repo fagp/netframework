@@ -1,7 +1,6 @@
 import torch
 
 def selectoptimizer(optimizername, net, experimentparams):
-    print('Selecting optimizer: ',optimizername)
     if optimizername=='Adam':
         optimizer = torch.optim.Adam(net.parameters(), **experimentparams)
     elif optimizername=='SGD':

@@ -1,5 +1,3 @@
-from dataloaders.customdataset.dataset import warp_Variable
-
 import sys
 import torch
 import numpy as np
@@ -21,9 +19,9 @@ from optimizers.selectopt import selectoptimizer
 from optimizers.selectschedule import selectschedule
 from loss.selectloss import selectloss
 from loss.selectloss import get_metric_path
-from loss.lossfunc import Accuracy
 from  visdom import Visdom
 import random
+from importlib import import_module
 
 class NetFramework():
     def __init__(self, args):
@@ -55,40 +53,50 @@ class NetFramework():
         self.batch_size=args.batch_size
 
         # Load datasets
-        self.traindataset,self.train_loader = loaddataset(datasetname=args.dataset,
+        print('Loading dataset: ',args.dataset)
+        self.traindataset,self.train_loader, self.dmodule = loaddataset(datasetname=args.dataset,
                                         experimentparam=args.datasetparam,
                                         batch_size=args.batch_size,
                                         use_cuda=self.use_cuda,
                                         worker=args.train_worker,
                                         config_file='defaults/dataconfig_train.json')
         
-        self.testdataset,self.test_loader = loaddataset(datasetname=args.dataset,
+        self.testdataset,self.test_loader,_ = loaddataset(datasetname=args.dataset,
                                         experimentparam=args.datasetparam,
                                         batch_size=args.batch_size,
                                         use_cuda=self.use_cuda,
                                         worker=args.test_worker,
                                         config_file='defaults/dataconfig_test.json')
 
+        self.warp_var_mod = import_module( 'dataloaders.'+self.dmodule+'.dataset' )
+
         # Setup model
-        self.net, self.arch = loadmodel(modelname=args.model,
+        print('Loading model: ',args.model)
+        self.net, self.arch, self.mmodule = loadmodel(modelname=args.model,
                                         experimentparams=args.modelparam,
                                         use_cuda=self.use_cuda,
                                         use_parallel=self.use_parallel,
                                         config_file='defaults/modelconfig.json')
 
         # Setup Optimizer
+        print('Selecting optimizer: ',args.optimizer)
         self.optimizer = selectoptimizer(args.optimizer,self.net,args.optimizerparam)
         
         # Setup Learning Rate Scheduling
+        print('LR Schedule: ',args.lrschedule)
         self.scheduler = selectschedule(args.lrschedule, self.optimizer)
 
         # Setup Loss criterion
-        self.criterion, self.losseval = selectloss(args.loss,args.lossparam)
-        self.losseval="self.criterion"+self.losseval
+        print('Selecting loss function: ',args.loss)
+        self.criterion, self.losseval = selectloss(lossname=args.loss,
+                                        parameter=args.lossparam,
+                                        use_cuda=self.use_cuda,
+                                        config_file='defaults/loss_definition.json')
         self.trlossavg = AverageMeter()
         self.vdlossavg = AverageMeter()
         
         # Others evaluation metrics
+        print('Selecting metrics functions:')
         metrics_dict=get_metric_path('defaults/metrics.json')
         self.metrics = dict()
         self.metrics_eval = dict()
@@ -96,8 +104,11 @@ class NetFramework():
         self.vdmetrics_avg = dict()
 
         for key,value in metrics_dict.items():
-            self.metrics[key],metriceval = selectloss(value['metric'],value['param'])
-            self.metrics_eval[key]="self.metrics[\'"+key+"\']"+metriceval
+            self.metrics[key],self.metrics_eval[key] = selectloss(lossname=value['metric'],
+                                        parameter=value['param'],
+                                        use_cuda=self.use_cuda,
+                                        config_file='defaults/loss_definition.json')
+
             self.trmetrics_avg[key]=AverageMeter()
             self.vdmetrics_avg[key]=AverageMeter()
 
@@ -122,6 +133,7 @@ class NetFramework():
             save_ = True if self.save_rate!=0 and (current_epoch % self.save_rate)==0 else False
             # Save netowrk after self.save_rate epochs
             if save_:
+                print('Saving checkpoint epoch {}\n'.format(current_epoch))
                 self.savemodel(os.path.join(self.folders['model_path'],'epoch{}model.t7'.format(current_epoch)))
 
             # Forward and backward over training set
@@ -134,6 +146,7 @@ class NetFramework():
 
     ## Train function
     def train(self,current_epoch):
+        ttime=time.time()
         data_time = AverageMeter()
         batch_time = AverageMeter()
 
@@ -149,18 +162,20 @@ class NetFramework():
             data_time.update(time.time() - end)
 
             iteration=float(i)/total_train +current_epoch
-            sample = warp_Variable(sample,self.use_cuda,grad=True)
+            sample = self.warp_var_mod.warp_Variable(sample,self.use_cuda,grad=True)
             images=sample['image']
 
             self.optimizer.zero_grad()
             outputs = self.net(images)
-            loss=eval(self.losseval)
+            kwarg=eval(self.losseval)
+            loss=self.criterion(**kwarg)
             loss.backward()
             self.optimizer.step()
 
             self.trlossavg.update(loss.item(),images.size(0))
             for key,value in self.metrics_eval.items():
-                metric= eval(self.metrics_eval[key])
+                kwarg=eval(self.metrics_eval[key])
+                metric=self.metrics[key](**kwarg)
                 self.trmetrics_avg[key].update(metric.item(),images.size(0))
 
             batch_time.update(time.time() - end)
@@ -196,10 +211,11 @@ class NetFramework():
                     self.visplotter.show(tag, 'train', iteration, value.avg )
                     self.visplotter.show(tag, 'train_mean', iteration, value.total_avg )
 
-            del outputs, loss
+        print('|Total time: {:.3f}'.format(time.time()-ttime))
 
 
-    def validation(self,current_epoch):   
+    def validation(self,current_epoch): 
+        ttime=time.time()  
         data_time = AverageMeter()
         batch_time = AverageMeter()
 
@@ -215,15 +231,17 @@ class NetFramework():
             data_time.update(time.time() - end)
             
             iteration=float(i)/total_valid +current_epoch-1
-            sample = warp_Variable(sample,self.use_cuda,grad=True)
+            sample = self.warp_var_mod.warp_Variable(sample,self.use_cuda,grad=True)
             images=sample['image']
 
             outputs = self.net(images)
-            loss=eval(self.losseval)
+            kwarg=eval(self.losseval)
+            loss=self.criterion(**kwarg)
             
             self.vdlossavg.update(loss.item(),images.size(0))
             for key,value in self.metrics_eval.items():
-                metric= eval(self.metrics_eval[key])
+                kwarg=eval(self.metrics_eval[key])
+                metric=self.metrics[key](**kwarg)
                 self.vdmetrics_avg[key].update(metric.item(),images.size(0))
 
             batch_time.update(time.time() - end)
@@ -258,21 +276,21 @@ class NetFramework():
                 for tag, value in info.items():
                     self.visplotter.show(tag, 'valid', iteration, value.avg )
                     self.visplotter.show(tag, 'valid_mean', iteration, value.total_avg )
-
-            del outputs, loss
         
         watch_metric=self.vdmetrics_avg[list(self.vdmetrics_avg.keys())[0]]
+        print('|Total time: {:.3f}'.format(time.time()-ttime))
 
         return self.vdlossavg.avg, watch_metric.avg
 
     def valid_visualization(self,current_epoch,index=0,save=False):   
         self.net.eval()   
 
+        classes=['Left','Right']
         sample=self.testdataset[ index ]
         sample['image'].unsqueeze_(0)
         sample['label'].unsqueeze_(0)
         
-        sample=warp_Variable(sample,self.use_cuda,grad=False)
+        sample=self.warp_var_mod.warp_Variable(sample,self.use_cuda,grad=False)
         images=sample['image']
 
         outputs = self.net(images)       
@@ -281,22 +299,14 @@ class NetFramework():
 
         img=images[0].cpu().numpy()
         if self.visdom==True:
-            self.visimshow.show('Image1',img)
-            if sample['label'][0,0].item()==0:
-                self.vistext.show('GT','Left')
-            else:
-                self.vistext.show('GT','Right')
-            if classific.item()==0:
-                self.vistext.show('CL','Left')
-            else:
-                self.vistext.show('CL','Right')
+            self.visimshow.show('Image',img)
+            self.vistext.show('GT',classes[sample['label'][0,0].item()]+'\n')
+            self.vistext.show('CL',classes[classific.item()]+'\n')
 
-        #del outputs
         return 1
 
 
     def savemodel(self,modelpath):
-        print('Saving..')
         to_save= self.net.module if self.use_parallel else self.net
         state = {
                 'epoch': self.current_epoch,
