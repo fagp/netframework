@@ -1,3 +1,4 @@
+import torch
 
 def selectschedule(schedulename,optimizer):   
     if schedulename == 'rop':

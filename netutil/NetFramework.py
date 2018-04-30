@@ -1,30 +1,79 @@
-import sys
-import torch
-import numpy as np
-import torch.nn as nn
-import torch.nn.functional as F
-import torchvision.models as models
-
-from torch.autograd import Variable
-from scipy.misc import imsave
-import gc
-import time
-
+# import gc
 import os
-from dataloaders.loaddataset import loaddataset
-from utils import graphics as gph
-from utils.utils import *
-from models.loadmodel import loadmodel
-from optimizers.selectopt import selectoptimizer
-from optimizers.selectschedule import selectschedule
-from loss.selectloss import selectloss
-from loss.selectloss import get_metric_path
+# import sys
+import time
+# import torch
+# import random
+import argparse
+# import numpy as np
+# import torch.nn as nn
 from  visdom import Visdom
-import random
+from ..utils.utils import *
+# from scipy.misc import imsave
+import torch.nn.functional as F
+from ..utils.utils import Decoder
+# import torchvision.models as models
+# from torch.autograd import Variable
 from importlib import import_module
+from ..utils import graphics as gph
+from ..models.loadmodel import loadmodel
+from ..loss.selectloss import selectloss
+from ..loss.selectloss import get_metric_path
+from ..dataloaders.loaddataset import loaddataset
+from ..optimizers.selectopt import selectoptimizer
+from ..optimizers.selectschedule import selectschedule
+
 
 class NetFramework():
-    def __init__(self, args):
+    def __init__(self, defaults_path):
+
+        parser = argparse.ArgumentParser(description='Net framework arguments description')
+        parser.add_argument('--experiment', nargs='?', type=str, default='experiment', help='Experiment name')
+        parser.add_argument('--model', nargs='?', type=str, default='vgg16_2', help='Architecture to use')
+        parser.add_argument('--modelparam', type=str, default='{}', help='Experiment model parameters')
+        parser.add_argument('--dataset', nargs='?', type=str, default='blurmoto', help='Dataset key specified in dataconfig_*.json')
+        parser.add_argument('--datasetparam', type=str, default='{}', help='Experiment dataset parameters')
+        parser.add_argument('--imsize', nargs='?', type=int, default=200, help='Image resize parameter')
+
+        parser.add_argument('--visdom', action='store_true', help='If included shows visdom visulaization')
+        parser.add_argument('--show_rate', nargs='?',type=int, default=4, help='Visdom show after num of iterations (used with --visdom)')
+        parser.add_argument('--print_rate', nargs='?',type=int, default=4, help='Print after num of iterations')
+        parser.add_argument('--save_rate', nargs='?',type=int, default=10, help='Save after num of iterations (if --save_rate=0 then no save is done during training)')
+
+        parser.add_argument('--use_cuda', nargs='?',type=int, default=0, help='GPU device (if --use_cuda=-1 then CPU used)')
+        parser.add_argument('--parallel', action='store_true', help='Use multiples GPU (used only if --use_cuda>-1)')
+        parser.add_argument('--epochs', nargs='?', type=int, default=1000, help='Number of epochs')
+        parser.add_argument('--batch_size', nargs='?', type=int, default=1, help='Minibatch size')
+        parser.add_argument('--train_worker', nargs='?', type=int, default=1, help='Number of training workers')
+        parser.add_argument('--test_worker', nargs='?', type=int, default=1, help='Number of testing workers')
+
+        parser.add_argument('--optimizer', nargs='?', type=str, default='RMSprop', help='Optimizer to use')
+        parser.add_argument('--optimizerparam', type=str, default='{}', help='Experiment optimizer parameters')
+        parser.add_argument('--lrschedule', nargs='?', type=str, default='none', help='LR Schedule to use')
+        parser.add_argument('--loss', nargs='?', type=str, default='ce', help='Loss function to use')
+        parser.add_argument('--lossparam', type=str, default='{}', help='Loss function parameters')
+        parser.add_argument('--resume', action='store_true', help='Resume training')
+
+        args = parser.parse_args()
+
+        args.lossparam=json.loads(args.lossparam.replace("'","\""),cls=Decoder)
+        args.datasetparam=json.loads(args.datasetparam.replace("'","\""),cls=Decoder)
+        args.modelparam=json.loads(args.modelparam.replace("'","\""),cls=Decoder)
+        args.optimizerparam=json.loads(args.optimizerparam.replace("'","\""),cls=Decoder)
+
+        # create outputs folders
+        root='../out'
+        experimentpath=(os.path.join(root,args.experiment))
+        args.folders={ 'root_path':root, 'experiment_path':experimentpath, 'model_path':os.path.join(experimentpath,'model'), 'images_path':os.path.join(experimentpath,'images') }
+
+        for i in range(2):
+            for folder, path in args.folders.items():
+                if not os.path.isdir(path):
+                    try:
+                        os.mkdir(path)  
+                    except:
+                        pass
+
 
         # Parse use cuda
         self.use_cuda, self.use_parallel, self.ngpu = parse_cuda(args)
@@ -59,16 +108,16 @@ class NetFramework():
                                         batch_size=args.batch_size,
                                         use_cuda=self.use_cuda,
                                         worker=args.train_worker,
-                                        config_file='defaults/dataconfig_train.json')
+                                        config_file=os.path.join(defaults_path,'dataconfig_train.json'))
         
         self.testdataset,self.test_loader,_ = loaddataset(datasetname=args.dataset,
                                         experimentparam=args.datasetparam,
                                         batch_size=args.batch_size,
                                         use_cuda=self.use_cuda,
                                         worker=args.test_worker,
-                                        config_file='defaults/dataconfig_test.json')
+                                        config_file=os.path.join(defaults_path,'dataconfig_test.json'))
 
-        self.warp_var_mod = import_module( 'dataloaders.'+self.dmodule+'.dataset' )
+        self.warp_var_mod = import_module( self.dmodule+'.dataset' )
 
         # Setup model
         print('Loading model: ',args.model)
@@ -76,7 +125,7 @@ class NetFramework():
                                         experimentparams=args.modelparam,
                                         use_cuda=self.use_cuda,
                                         use_parallel=self.use_parallel,
-                                        config_file='defaults/modelconfig.json')
+                                        config_file=os.path.join(defaults_path,'modelconfig.json'))
 
         # Setup Optimizer
         print('Selecting optimizer: ',args.optimizer)
@@ -91,13 +140,13 @@ class NetFramework():
         self.criterion, self.losseval = selectloss(lossname=args.loss,
                                         parameter=args.lossparam,
                                         use_cuda=self.use_cuda,
-                                        config_file='defaults/loss_definition.json')
+                                        config_file=os.path.join(defaults_path,'loss_definition.json'))
         self.trlossavg = AverageMeter()
         self.vdlossavg = AverageMeter()
         
         # Others evaluation metrics
         print('Selecting metrics functions:')
-        metrics_dict=get_metric_path('defaults/metrics.json')
+        metrics_dict=get_metric_path(os.path.join(defaults_path,'metrics.json'))
         self.metrics = dict()
         self.metrics_eval = dict()
         self.trmetrics_avg = dict()
@@ -107,7 +156,7 @@ class NetFramework():
             self.metrics[key],self.metrics_eval[key] = selectloss(lossname=value['metric'],
                                         parameter=value['param'],
                                         use_cuda=self.use_cuda,
-                                        config_file='defaults/loss_definition.json')
+                                        config_file=os.path.join(defaults_path,'loss_definition.json'))
 
             self.trmetrics_avg[key]=AverageMeter()
             self.vdmetrics_avg[key]=AverageMeter()

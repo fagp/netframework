@@ -1,12 +1,11 @@
-from utils.utils import get_class
 import json
+import numpy as np
+from ..utils.utils import Decoder
+from ..utils.utils import get_class
+from importlib import import_module
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 from torch.utils.data.sampler import SubsetRandomSampler
-import numpy as np
-from utils.utils import Decoder
-from importlib import import_module
-
 
 def loaddataset(datasetname,experimentparam,batch_size=1,use_cuda=False,worker=1,config_file='defaults/dataconfig_train.json'):     
     #load dataset configuration (json)
@@ -24,7 +23,7 @@ def loaddataset(datasetname,experimentparam,batch_size=1,use_cuda=False,worker=1
         raise 'Please define a default transform \'transform_param\' behavior in '+config_file
 
     #setup transforms
-    tr = import_module( 'dataloaders.'+module+'.ctransforms' )
+    tr = import_module( module+'.ctransforms' )
     transformlist=transformstr.replace(' ','').split('),')
     transformstr=''
     for transf in transformlist:
@@ -33,7 +32,7 @@ def loaddataset(datasetname,experimentparam,batch_size=1,use_cuda=False,worker=1
 
     transform = eval('transforms.Compose(['+transformstr+'])')
 
-    cdataset=get_class('dataloaders.'+module+'.dataset.cdataset')
+    cdataset=get_class(module+'.dataset.cdataset')
 
     #dataset 
     ddatasets = cdataset(**data_props,transform_param=transform)

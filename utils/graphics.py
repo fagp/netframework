@@ -1,5 +1,5 @@
-from visdom import Visdom
 import numpy as np
+from visdom import Visdom
 from skimage.transform import rescale
 
 class VisdomLinePlotter(object):

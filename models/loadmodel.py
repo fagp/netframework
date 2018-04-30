@@ -2,10 +2,9 @@ import json
 import torch
 from torch import nn
 from torch.nn import init
+from ..utils.utils import Decoder
+from ..utils.utils import get_class
 import torch.backends.cudnn as cudnn
-from utils.utils import Decoder
-from utils.utils import get_class
-
 
 def loadmodel(modelname,experimentparams,use_cuda=False,use_parallel=False,config_file='defaults/modelconfig.json'):
     model_props = get_model_path(name=modelname, config_file=config_file)
@@ -19,7 +18,7 @@ def loadmodel(modelname,experimentparams,use_cuda=False,use_parallel=False,confi
     for key,value in experimentparams.items():
         model_props[key]=value
 
-    cmodel=get_class('models.'+module+'.'+arch)
+    cmodel=get_class(module+'.'+arch)
     net = cmodel(**model_props)
 
     if torch.cuda.is_available() and use_cuda:

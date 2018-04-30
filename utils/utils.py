@@ -1,10 +1,10 @@
+import os
+import json
+import torch
+import numpy as np
 from torch import nn
 from torch.nn import init
 from torch.autograd import Variable
-import numpy as np
-import torch
-import os
-import json
 
 def parse_cuda(args):
     if args.use_cuda>-1:

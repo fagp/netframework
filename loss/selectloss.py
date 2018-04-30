@@ -1,10 +1,20 @@
-from .lossfunc import *
-import torch.nn as nn
 import json
-from utils.utils import Decoder
+import torch
+import torch.nn as nn
+from ..utils.utils import Decoder
+from importlib import import_module
 
 def selectloss(lossname,parameter={},use_cuda=False, config_file='defaults/loss_definition.json'):
     loss_func=get_loss_path(lossname,config_file)
+    
+    if 'module' in loss_func:
+        module=loss_func['module']
+        loss_func.pop('module',None)
+        lmod = import_module( module )
+        loss_func['criterion']='lmod.'+loss_func['criterion']
+    else:
+        loss_func['criterion']='nn.'+loss_func['criterion']
+
     criterion = eval(loss_func['criterion']+'(**parameter)')
     criterionparam = loss_func['criterionparam']
 

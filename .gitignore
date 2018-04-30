@@ -1,5 +1,3 @@
 *.pyc
 *.t7
 *.txt
-src/.vscode/launch.json
-src/.vscode/settings.json
