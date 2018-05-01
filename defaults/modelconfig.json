@@ -1,0 +1,9 @@
+{
+  "vgg16_2":
+  {
+    "arch":"VGG",
+    "module": "models.arch.vgg",
+    "vgg_name":"VGG16",
+    "num_class":"2"
+  }
+}

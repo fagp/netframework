@@ -1,0 +1,3 @@
+[submodule "netframework"]
+	path = netframework
+	url = https://github.com/fagp/netframework.git

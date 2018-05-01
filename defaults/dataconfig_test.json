@@ -1,0 +1,11 @@
+{
+  "blur":
+  {
+    "root": "/home/fillo/Documents/motorola/data/coco_dataset/test",
+    "ifolder": "",
+    "ext": "jpg",
+    "datasize":"10",
+    "transform_param": "RandomCrop((200,200)),Resize(200),ToTensor()",
+    "module":"dataloaders.customdataset"
+  }
+}

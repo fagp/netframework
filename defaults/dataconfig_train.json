@@ -1,0 +1,11 @@
+{
+  "blur":
+  {
+    "root": "/home/fillo/Documents/motorola/data/coco_dataset/train",
+    "ifolder": "",
+    "ext": "jpg",
+    "datasize":"20",
+    "transform_param": "RandomCrop((200,200)), RandomFlip(0.5), Resize(200), ToTensor()",
+    "module":"dataloaders.customdataset"
+  }
+}
