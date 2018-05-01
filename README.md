@@ -2,12 +2,16 @@
 
 Pytorch framework for quick implementation
 
+## Framework overview
+
+![alt text](readme_img/framework.png)
+
 ## Dataset
 1-Implementation of dataset.py in module [customdataset]
 
 FILE:
 
-	src/dataloaders/[customdataset]/dataset.py
+	dataloaders/[customdataset]/dataset.py
 
 IMPLEMENT:
 
@@ -24,7 +28,7 @@ CONSTRAINT:
 
 FILE:
 
-	src/dataloaders/[customdataset]/ctransforms.py
+	dataloaders/[customdataset]/ctransforms.py
 
 IMPLEMENT:
 
@@ -41,9 +45,9 @@ CONSTRAINT:
 
 FILE:
 
-	src/defaults/dataconfig_train.json
+	defaults/dataconfig_train.json
 
-	src/defaults/dataconfig_test.json
+	defaults/dataconfig_test.json
 
 DEFINE:
 
@@ -51,7 +55,7 @@ DEFINE:
 
 CONSTRAINT:
 
-	in dataconfig_[train/test].json must be defined "module" key where the value is the name of cdataset module (i.e. customdataset)
+	in dataconfig_[train/test].json must be defined "module" key where the value is the name of cdataset module (i.e. dataloaders.customdataset)
 
 	in dataconfig_[train/test].json must be defined "transform_param" key where the value is a string with a sequence of transformations in ctransforms
 
@@ -66,7 +70,7 @@ NOTE:
 
 FILE:
 
-	src/models/arch/[model].py
+	models/arch/[model].py
 
 IMPLEMENT:
 
@@ -81,7 +85,7 @@ CONSTRAINT:
 
 FILE:
 
-	src/defaults/modelconfig.json
+	defaults/modelconfig.json
 
 DEFINE:
 
@@ -89,7 +93,7 @@ DEFINE:
 
 CONSTRAINT:
 
-	in modelconfig.json must be defined "module" key where the value is the name of [myarch] package (i.e. arch.model)
+	in modelconfig.json must be defined "module" key where the value is the name of [myarch] package (i.e. models.arch.model)
 
 	in modelconfig.json must be defined "arch" key where the value is a string with architecture class name (i.e. myarch)
 
@@ -104,7 +108,7 @@ NOTE:
 
 FILE:
 
-	src/loss/lossfunc.py
+	loss/lossfunc.py
 
 IMPLEMENT:
 
@@ -119,7 +123,7 @@ CONSTRAINT:
 
 FILE:
 
-	src/defaults/loss_definition.json
+	defaults/loss_definition.json
 
 DEFINE:
 
@@ -127,7 +131,9 @@ DEFINE:
 
 CONSTRAINT:
 
-	in loss_definition.json must be defined a "criterion" key which is a reference to criterion class of step 6. Its [metric].__init__(...) parameters will be initialized with --lossparam argument for loss function and src/defaults/metrics.json for other metrics.
+	in loss_definition.json must be defined "module" key where the value is the name of loss packages (i.e. loss.lossfunc)
+
+	in loss_definition.json must be defined a "criterion" key which is a reference to criterion class of step 6. Its [metric].__init__(...) parameters will be initialized with --lossparam argument for loss function and defaults/metrics.json for other metrics.
 
 	in loss_definition.json must be defined a "criterionparam" key where are specified criterion call parameters [metric].forward(criterionparam). Variables names used must match with outputs for network forward and sample[...] for custom dataset keys
 
@@ -136,7 +142,7 @@ CONSTRAINT:
 
 FILE:
 
-	src/defaults/metrics.json
+	defaults/metrics.json
 
 DEFINE:
 
@@ -154,7 +160,7 @@ CONSTRAINT:
 
 FILE:
 
-	src/netutil/[customnet].py
+	netutil/[customnet].py
 
 IMPLEMENT:
 
