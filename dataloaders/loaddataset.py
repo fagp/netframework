@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 from torch.utils.data.sampler import SubsetRandomSampler
 
-def loaddataset(datasetname,experimentparam,batch_size=1,use_cuda=False,worker=1,config_file='defaults/dataconfig_train.json'):     
+def loaddataset(datasetname,experimentparam,batch_size=1,worker=1,config_file='defaults/dataconfig_train.json'):     
     #load dataset configuration (json)
     data_props = get_data_path(name=datasetname,config_file=config_file)
     module=data_props['module']
@@ -39,7 +39,7 @@ def loaddataset(datasetname,experimentparam,batch_size=1,use_cuda=False,worker=1
 
     #loader
     tsampler = SubsetRandomSampler(np.random.permutation(len(ddatasets)))
-    dloader = DataLoader(ddatasets, batch_size=batch_size, sampler=tsampler, num_workers=worker, pin_memory=use_cuda)
+    dloader = DataLoader(ddatasets, batch_size=batch_size, sampler=tsampler, num_workers=worker)
 
     return ddatasets, dloader, module
 

@@ -4,9 +4,8 @@ from torch import nn
 from torch.nn import init
 from ..utils.utils import Decoder
 from ..utils.utils import get_class
-import torch.backends.cudnn as cudnn
 
-def loadmodel(modelname,experimentparams,use_cuda=False,use_parallel=False,config_file='defaults/modelconfig.json'):
+def loadmodel(modelname,experimentparams,config_file='defaults/modelconfig.json'):
     model_props = get_model_path(name=modelname, config_file=config_file)
 
     arch=model_props['arch']
@@ -20,13 +19,6 @@ def loadmodel(modelname,experimentparams,use_cuda=False,use_parallel=False,confi
 
     cmodel=get_class(module+'.'+arch)
     net = cmodel(**model_props)
-
-    if torch.cuda.is_available() and use_cuda:
-        net=net.cuda()
-
-    if use_cuda and use_parallel:
-        net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
-        cudnn.benchmark = True
 
     init_params(net)
 

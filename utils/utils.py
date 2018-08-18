@@ -9,16 +9,14 @@ from torch.autograd import Variable
 def parse_cuda(args):
     if args.use_cuda>-1:
         print('Using CUDA')
-        use_cuda=True
-        ngpu=args.use_cuda
+        device = torch.device('cuda:'+str(args.use_cuda))
         use_parallel=args.parallel
     else:
         print('Using CPU')
-        ngpu=-1
-        use_cuda=False
+        device = torch.device('cpu')
         use_parallel=False
     
-    return use_cuda, use_parallel, ngpu
+    return device, use_parallel
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""

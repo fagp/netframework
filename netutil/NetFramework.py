@@ -16,6 +16,7 @@ from ..utils.utils import Decoder
 # from torch.autograd import Variable
 from importlib import import_module
 from ..utils import graphics as gph
+import torch.backends.cudnn as cudnn
 from ..models.loadmodel import loadmodel
 from ..loss.selectloss import selectloss
 from ..loss.selectloss import get_metric_path
@@ -76,8 +77,8 @@ class NetFramework():
 
 
         # Parse use cuda
-        self.use_cuda, self.use_parallel, self.ngpu = parse_cuda(args)
-        torch.cuda.set_device(self.ngpu)
+        self.device, self.use_parallel = parse_cuda(args)
+        torch.cuda.set_device(args.use_cuda)
 
         # Visdom visualization
         self.visdom=args.visdom
@@ -106,14 +107,12 @@ class NetFramework():
         self.traindataset,self.train_loader, self.dmodule = loaddataset(datasetname=args.dataset,
                                         experimentparam=args.datasetparam,
                                         batch_size=args.batch_size,
-                                        use_cuda=self.use_cuda,
                                         worker=args.train_worker,
                                         config_file=os.path.join(defaults_path,'dataconfig_train.json'))
         
         self.testdataset,self.test_loader,_ = loaddataset(datasetname=args.dataset,
                                         experimentparam=args.datasetparam,
                                         batch_size=args.batch_size,
-                                        use_cuda=self.use_cuda,
                                         worker=args.test_worker,
                                         config_file=os.path.join(defaults_path,'dataconfig_test.json'))
 
@@ -123,9 +122,13 @@ class NetFramework():
         print('Loading model: ',args.model)
         self.net, self.arch, self.mmodule = loadmodel(modelname=args.model,
                                         experimentparams=args.modelparam,
-                                        use_cuda=self.use_cuda,
-                                        use_parallel=self.use_parallel,
                                         config_file=os.path.join(defaults_path,'modelconfig.json'))
+
+        self.net.to(self.device)
+        if self.use_parallel:
+            self.net = torch.nn.DataParallel(self.net, device_ids=range(torch.cuda.device_count()))
+            cudnn.benchmark = True
+
 
         # Setup Optimizer
         print('Selecting optimizer: ',args.optimizer)
@@ -139,8 +142,8 @@ class NetFramework():
         print('Selecting loss function: ',args.loss)
         self.criterion, self.losseval = selectloss(lossname=args.loss,
                                         parameter=args.lossparam,
-                                        use_cuda=self.use_cuda,
                                         config_file=os.path.join(defaults_path,'loss_definition.json'))
+        self.criterion.to(self.device)
         self.trlossavg = AverageMeter()
         self.vdlossavg = AverageMeter()
         
@@ -155,9 +158,9 @@ class NetFramework():
         for key,value in metrics_dict.items():
             self.metrics[key],self.metrics_eval[key] = selectloss(lossname=value['metric'],
                                         parameter=value['param'],
-                                        use_cuda=self.use_cuda,
                                         config_file=os.path.join(defaults_path,'loss_definition.json'))
-
+            self.metrics[key].to(self.device)
+            self.metrics[key].requires_grad_(False)
             self.trmetrics_avg[key]=AverageMeter()
             self.vdmetrics_avg[key]=AverageMeter()
 
@@ -211,7 +214,7 @@ class NetFramework():
             data_time.update(time.time() - end)
 
             iteration=float(i)/total_train +current_epoch
-            sample = self.warp_var_mod.warp_Variable(sample,self.use_cuda,grad=True)
+            sample = self.warp_var_mod.warp_Variable(sample,self.device)
             images=sample['image']
 
             self.optimizer.zero_grad()
@@ -270,61 +273,60 @@ class NetFramework():
 
         self.vdlossavg.new_local()
         for key,value in self.vdmetrics_avg.items():
-            self.vdmetrics_avg[key].new_local()
-
-        self.net.eval()   
+            self.vdmetrics_avg[key].new_local()  
 
         end = time.time()
         total_valid=len(self.test_loader)
-        for i, sample in enumerate(self.test_loader):
-            data_time.update(time.time() - end)
-            
-            iteration=float(i)/total_valid +current_epoch-1
-            sample = self.warp_var_mod.warp_Variable(sample,self.use_cuda,grad=True)
-            images=sample['image']
+        with torch.no_grad():
+            for i, sample in enumerate(self.test_loader):
+                data_time.update(time.time() - end)
 
-            outputs = self.net(images)
-            kwarg=eval(self.losseval)
-            loss=self.criterion(**kwarg)
-            
-            self.vdlossavg.update(loss.item(),images.size(0))
-            for key,value in self.metrics_eval.items():
-                kwarg=eval(self.metrics_eval[key])
-                metric=self.metrics[key](**kwarg)
-                self.vdmetrics_avg[key].update(metric.item(),images.size(0))
+                iteration=float(i)/total_valid +current_epoch-1
+                sample = self.warp_var_mod.warp_Variable(sample,self.device)
+                images=sample['image']
 
-            batch_time.update(time.time() - end)
-            end = time.time()
+                outputs = self.net(images)
+                kwarg=eval(self.losseval)
+                loss=self.criterion(**kwarg)
 
-            if i%self.print_rate==0:
-                strinfo  = '| Valid: [{0}][{1}/{2}]\t'                
-                strinfo += 'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'     
-                strinfo += 'Data {data_time.val:.3f} ({data_time.avg:.3f})\t' 
-                
-                print(
-                        strinfo.format(
-                            current_epoch, i, total_valid-1,
-                            batch_time=batch_time,
-                            data_time=data_time,
+                self.vdlossavg.update(loss.item(),images.size(0))
+                for key,value in self.metrics_eval.items():
+                    kwarg=eval(self.metrics_eval[key])
+                    metric=self.metrics[key](**kwarg)
+                    self.vdmetrics_avg[key].update(metric.item(),images.size(0))
+
+                batch_time.update(time.time() - end)
+                end = time.time()
+
+                if i%self.print_rate==0:
+                    strinfo  = '| Valid: [{0}][{1}/{2}]\t'                
+                    strinfo += 'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'     
+                    strinfo += 'Data {data_time.val:.3f} ({data_time.avg:.3f})\t' 
+
+                    print(
+                            strinfo.format(
+                                current_epoch, i, total_valid-1,
+                                batch_time=batch_time,
+                                data_time=data_time,
+                                )
+                            ,end=''               
                             )
-                        ,end=''               
-                        )
-                
-                for key,value in self.vdmetrics_avg.items():
-                    print('{} {:.3f} ({:.3f})\t'.format(key,value.val,value.avg),end='')
-                
-                print('loss {:.3f} ({:.3f})'.format(self.vdlossavg.val,self.vdlossavg.avg))
+
+                    for key,value in self.vdmetrics_avg.items():
+                        print('{} {:.3f} ({:.3f})\t'.format(key,value.val,value.avg),end='')
+
+                    print('loss {:.3f} ({:.3f})'.format(self.vdlossavg.val,self.vdlossavg.avg))
 
 
-            if self.visdom==True and current_epoch!=self.init_epoch and (  ((i+1) % self.show_rate)==0 or ((i+1) % total_valid)==0 ):
-                info = {'loss':self.vdlossavg}
+                if self.visdom==True and current_epoch!=self.init_epoch and (  ((i+1) % self.show_rate)==0 or ((i+1) % total_valid)==0 ):
+                    info = {'loss':self.vdlossavg}
 
-                for key,value in self.vdmetrics_avg.items():
-                    info[key]=value
+                    for key,value in self.vdmetrics_avg.items():
+                        info[key]=value
 
-                for tag, value in info.items():
-                    self.visplotter.show(tag, 'valid', iteration, value.avg )
-                    self.visplotter.show(tag, 'valid_mean', iteration, value.total_avg )
+                    for tag, value in info.items():
+                        self.visplotter.show(tag, 'valid', iteration, value.avg )
+                        self.visplotter.show(tag, 'valid_mean', iteration, value.total_avg )
         
         watch_metric=self.vdmetrics_avg[list(self.vdmetrics_avg.keys())[0]]
         print('|Total time: {:.3f}'.format(time.time()-ttime))
@@ -332,25 +334,15 @@ class NetFramework():
         return self.vdlossavg.avg, watch_metric.avg
 
     def valid_visualization(self,current_epoch,index=0,save=False):   
-        self.net.eval()   
+        with torch.no_grad(): 
+            sample=self.testdataset[ index ]
+            sample['image'].unsqueeze_(0)
 
-        classes=['Left','Right']
-        sample=self.testdataset[ index ]
-        sample['image'].unsqueeze_(0)
-        sample['label'].unsqueeze_(0)
-        
-        sample=self.warp_var_mod.warp_Variable(sample,self.use_cuda,grad=False)
-        images=sample['image']
-
-        outputs = self.net(images)       
-
-        classific= torch.argmax(F.softmax(outputs[0],1))
-
-        img=images[0].cpu().numpy()
-        if self.visdom==True:
-            self.visimshow.show('Image',img)
-            self.vistext.show('GT',classes[sample['label'][0,0].item()]+'\n')
-            self.vistext.show('CL',classes[classific.item()]+'\n')
+            sample=self.warp_var_mod.warp_Variable(sample,self.device)
+            images=sample['image']
+            img=images[0].cpu().numpy()
+            if self.visdom==True:
+                self.visimshow.show('Image',img)
 
         return 1
 

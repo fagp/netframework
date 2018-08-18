@@ -4,7 +4,7 @@ import torch.nn as nn
 from ..utils.utils import Decoder
 from importlib import import_module
 
-def selectloss(lossname,parameter={},use_cuda=False, config_file='defaults/loss_definition.json'):
+def selectloss(lossname,parameter={}, config_file='defaults/loss_definition.json'):
     loss_func=get_loss_path(lossname,config_file)
     
     if 'module' in loss_func:
@@ -17,9 +17,6 @@ def selectloss(lossname,parameter={},use_cuda=False, config_file='defaults/loss_
 
     criterion = eval(loss_func['criterion']+'(**parameter)')
     criterionparam = loss_func['criterionparam']
-
-    if torch.cuda.is_available() and use_cuda:
-        criterion=criterion.cuda()
 
     return criterion,criterionparam
 
