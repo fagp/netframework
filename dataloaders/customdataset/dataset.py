@@ -23,22 +23,18 @@ class cdataset(data.Dataset):
         if img.ndim==2:
             img=np.repeat(img[:,:,np.newaxis],3,axis=2)
 
-        sample = {'image': img, 'label':np.array([ 0, 1])}
+        rnd=np.random.randint(0,2)
+        sample = {'image': img, 'label':np.array([ rnd, 1-rnd])}
 
         if self.transform_param is not None:
             sample = self.transform_param(sample)
 
         return sample
 
-def warp_Variable(sample,use_cuda=False,grad=True):
+def warp_Variable(sample,device):
     images, labels = sample['image'], sample['label']
-
-    if torch.cuda.is_available() and use_cuda:
-        images = Variable(images.cuda(),requires_grad=grad) 
-        labels = Variable(labels.cuda(),requires_grad=False)
-    else:
-        images = Variable(images,requires_grad=grad)
-        labels = Variable(labels,requires_grad=False)
+    images=images.to(device)
+    labels=labels.to(device)
 
     sample = {'image': images, 'label':labels.squeeze(1)}
     return sample

@@ -7,5 +7,14 @@
     "datasize":"10",
     "transform_param": "RandomCrop((200,200)),Resize(200),ToTensor()",
     "module":"dataloaders.customdataset"
+  },
+  "ktch":
+  {
+    "root": "/media/backup/work/caltech/data/cambia_wells/images",
+    "ifolder": "",
+    "ext": "png",
+    "datasize":"10",
+    "transform_param": "RandomCrop((200,200)), Resize(200), ToTensor()",
+    "module":"dataloaders.customdataset"
   }
 }
