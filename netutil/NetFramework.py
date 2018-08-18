@@ -160,7 +160,6 @@ class NetFramework():
                                         parameter=value['param'],
                                         config_file=os.path.join(defaults_path,'loss_definition.json'))
             self.metrics[key].to(self.device)
-            self.metrics[key].requires_grad_(False)
             self.trmetrics_avg[key]=AverageMeter()
             self.vdmetrics_avg[key]=AverageMeter()
 
