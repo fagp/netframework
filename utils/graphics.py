@@ -5,8 +5,8 @@ from skimage.transform import rescale
 class VisdomLinePlotter(object):
     """Plots to Visdom"""
     
-    def __init__(self, env_name='main'):
-        self.viz = Visdom()
+    def __init__(self, vis, env_name='main'):
+        self.viz = vis
         self.env = env_name
         self.plots = {}
     
@@ -33,8 +33,8 @@ class VisdomLinePlotter(object):
 class VisdomScatter(object):
     """Scatter to Visdom"""
     
-    def __init__(self, env_name='main'):
-        self.viz = Visdom()
+    def __init__(self, vis, env_name='main'):
+        self.viz = vis
         self.env = env_name
         self.scatters = {}
 
@@ -63,8 +63,8 @@ class VisdomScatter(object):
 class HeatMapVisdom(object):
     """Heat Map to Visdom"""
     
-    def __init__(self, env_name='main'):
-        self.vis = Visdom()
+    def __init__(self, vis, env_name='main'):
+        self.vis = vis
         self.env = env_name
         self.hmaps = {}
     
@@ -89,8 +89,8 @@ class HeatMapVisdom(object):
 class TextVisdom(object):
     """Heat Map to Visdom"""
     
-    def __init__(self, env_name='main'):
-        self.vis = Visdom()
+    def __init__(self, vis, env_name='main'):
+        self.vis = vis
         self.env = env_name
         self.vtext = {}
     
@@ -112,8 +112,8 @@ class TextVisdom(object):
 class ImageVisdom(object):
     """Images to Visdom"""
     
-    def __init__(self, env_name='main'):
-        self.vis = Visdom()
+    def __init__(self, vis, env_name='main'):
+        self.vis = vis
         self.env = env_name
         self.images = {}
     

@@ -83,12 +83,12 @@ class NetFramework():
         # Visdom visualization
         self.visdom=args.visdom
         if self.visdom==True:
-            self.vis = Visdom()
+            self.vis = Visdom(use_incoming_socket=False)
             self.vis.close(env=args.experiment)
-            self.visplotter = gph.VisdomLinePlotter(env_name=args.experiment)
-            self.visheatmap = gph.HeatMapVisdom(env_name=args.experiment)
-            self.visimshow  = gph.ImageVisdom(env_name=args.experiment)
-            self.vistext    = gph.TextVisdom(env_name=args.experiment)
+            self.visplotter = gph.VisdomLinePlotter(self.vis, env_name=args.experiment)
+            self.visheatmap = gph.HeatMapVisdom(self.vis, env_name=args.experiment)
+            self.visimshow  = gph.ImageVisdom(self.vis, env_name=args.experiment)
+            self.vistext    = gph.TextVisdom(self.vis, env_name=args.experiment)
 
         # Showing results rate
         self.print_rate = args.print_rate
