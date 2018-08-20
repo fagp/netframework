@@ -189,7 +189,6 @@ class NetFramework():
 
             # Forward and backward over training set
             self.train(current_epoch)
-
             self.valid_visualization(current_epoch,3)
         
         # Save last model netowrk

@@ -114,7 +114,7 @@ class dataProvide(imageProvide):
         name = self.files[i].split('.');
         pathname = os.path.join(self.path,self.fn_label,'{}{}.{}'.format(name[0],self.posfix, self.lext) );        
         label = np.array(self._loadimage(pathname));
-        if label.ndim == 3: label = label[:,:,0];
+        if label.ndim == 3: label = label[:,:,2];
         return label;
 #########################################################################################################
 class matProvide(imageProvide):
