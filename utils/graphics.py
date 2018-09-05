@@ -18,7 +18,8 @@ class VisdomLinePlotter(object):
                 legend=[split_name],
                 title=var_name,
                 xlabel='Epoch',
-                ylabel=var_name
+                ylabel=var_name,
+                ytype='log'
             ))
         else:
             self.viz.line(X=np.array([x]), Y=np.array([y]), 
