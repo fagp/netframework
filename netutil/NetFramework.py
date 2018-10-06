@@ -112,7 +112,7 @@ class NetFramework():
         
         self.testdataset,self.test_loader,_ = loaddataset(datasetname=args.dataset,
                                         experimentparam=args.datasetparam,
-                                        batch_size=1,#args.batch_size
+                                        batch_size=args.batch_size,
                                         worker=args.test_worker,
                                         config_file=os.path.join(defaults_path,'dataconfig_test.json'))
 

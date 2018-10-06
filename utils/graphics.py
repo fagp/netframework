@@ -72,6 +72,8 @@ class HeatMapVisdom(object):
     def show(self, title, image, colormap='Viridis',scale=1):
         if scale!=1:
             image=rescale(image,scale,preserve_range=True)
+        
+        image=np.flipud(image)
 
         if title not in self.hmaps:
             self.hmaps[title] = self.vis.heatmap(

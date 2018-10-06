@@ -101,10 +101,9 @@ echo "from netframework.dataloaders.imageutl import *" >> ../dataloaders/customd
 echo "" >> ../dataloaders/customdataset/dataset.py
 echo "" >> ../dataloaders/customdataset/dataset.py
 echo "class cdataset(data.Dataset):" >> ../dataloaders/customdataset/dataset.py
-echo "    def __init__(self, root, ext='jpg', ifolder='image',transform_param=None, n_classes=2):" >> ../dataloaders/customdataset/dataset.py
+echo "    def __init__(self, root, ext='jpg', ifolder='image',transform_param=None):" >> ../dataloaders/customdataset/dataset.py
 echo "	    #do some initialization" >> ../dataloaders/customdataset/dataset.py
 echo "        self.transform_param=transform_param" >> ../dataloaders/customdataset/dataset.py
-echo "        pass" >> ../dataloaders/customdataset/dataset.py
 echo "" >> ../dataloaders/customdataset/dataset.py
 echo "    def __len__(self):" >> ../dataloaders/customdataset/dataset.py
 echo "        return 1#dataset lenght" >> ../dataloaders/customdataset/dataset.py
@@ -137,7 +136,6 @@ echo '  {' >> ../defaults/dataconfig_test.json
 echo '    "root": "data/dataset1",' >> ../defaults/dataconfig_test.json
 echo '    "ifolder": "test",' >> ../defaults/dataconfig_test.json
 echo '    "ext": "png",' >> ../defaults/dataconfig_test.json
-echo '    "n_classes":"3",' >> ../defaults/dataconfig_test.json
 echo '    "transform_param": "RandomCrop(3),ToTensor()",' >> ../defaults/dataconfig_test.json
 echo '    "module":"dataloaders.customdataset"' >> ../defaults/dataconfig_test.json
 echo '  }' >> ../defaults/dataconfig_test.json
@@ -149,7 +147,6 @@ echo '  {' >> ../defaults/dataconfig_train.json
 echo '    "root": "data/dataset1",' >> ../defaults/dataconfig_train.json
 echo '    "ifolder": "train",' >> ../defaults/dataconfig_train.json
 echo '    "ext": "png",' >> ../defaults/dataconfig_train.json
-echo '    "n_classes":"3",' >> ../defaults/dataconfig_train.json
 echo '    "transform_param": "RandomCrop(3),ToTensor()",' >> ../defaults/dataconfig_train.json
 echo '    "module":"dataloaders.customdataset"' >> ../defaults/dataconfig_train.json
 echo '  }' >> ../defaults/dataconfig_train.json
