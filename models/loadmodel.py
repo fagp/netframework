@@ -26,6 +26,8 @@ def loadmodel(modelname,experimentparams,config_file='defaults/modelconfig.json'
 
 def get_model_path(name, config_file='defaults/modelconfig.json'):
     model_config = json.load(open(config_file),cls=Decoder)
+    if name=='':
+        name=list(model_config.keys())[0]
     if name not in model_config:
         raise 'Model '+name+' not found in '+config_file
     return model_config[name]

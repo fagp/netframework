@@ -30,9 +30,9 @@ class NetFramework():
 
         parser = argparse.ArgumentParser(description='Net framework arguments description')
         parser.add_argument('--experiment', nargs='?', type=str, default='experiment', help='Experiment name')
-        parser.add_argument('--model', nargs='?', type=str, default='vgg16_2', help='Architecture to use')
+        parser.add_argument('--model', nargs='?', type=str, default='', help='Architecture to use')
         parser.add_argument('--modelparam', type=str, default='{}', help='Experiment model parameters')
-        parser.add_argument('--dataset', nargs='?', type=str, default='blurmoto', help='Dataset key specified in dataconfig_*.json')
+        parser.add_argument('--dataset', nargs='?', type=str, default='', help='Dataset key specified in dataconfig_*.json')
         parser.add_argument('--datasetparam', type=str, default='{}', help='Experiment dataset parameters')
         parser.add_argument('--imsize', nargs='?', type=int, default=200, help='Image resize parameter')
 
@@ -326,7 +326,10 @@ class NetFramework():
                         self.visplotter.show(tag, 'valid', iteration, value.avg )
                         self.visplotter.show(tag, 'valid_mean', iteration, value.total_avg )
         
-        watch_metric=self.vdmetrics_avg[list(self.vdmetrics_avg.keys())[0]]
+        if list(self.vdmetrics_avg.keys()):
+            watch_metric=self.vdmetrics_avg[list(self.vdmetrics_avg.keys())[0]]
+        else:
+            watch_metric=self.vdlossavg
         print('|Total time: {:.3f}'.format(time.time()-ttime))
 
         return self.vdlossavg.avg, watch_metric.avg

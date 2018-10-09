@@ -46,6 +46,8 @@ def loaddataset(datasetname,experimentparam,batch_size=1,worker=1,config_file='d
 
 def get_data_path(name, config_file='defaults/dataconfig_train.json'):
     data = json.load(open(config_file),cls=Decoder)
+    if name=='':
+        name=list(data.keys())[0]
     if name not in data:
         raise 'Dataset '+name+' not found in '+config_file
     return data[name]
