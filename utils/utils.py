@@ -44,8 +44,8 @@ class AverageMeter(object):
         
         self.total_sum += val * n
         self.total_count += n
-        if self.total_count>10:
-            self.total_avg = np.median(np.array(self.array[-10:]))#self.total_sum / self.total_count
+        if self.total_count>50:
+            self.total_avg = np.median(np.array(self.array[-50:]))#self.total_sum / self.total_count
         else:
             self.total_avg = self.total_sum / self.total_count
 
