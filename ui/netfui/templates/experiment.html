@@ -1,0 +1,90 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="col-md-12">
+        <form method="POST" action="" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">Experiment</legend>
+                <div class="form-row align-items-center">
+                    <div class="col">{{ form.project.label() }}</div>
+                    <div class="col-3">{{ form.project(id="proj",class="custom-select") }}</div>
+                    <div class="col">{{ form.experiment.label(class="form-control-label") }}</div>
+                    <div class="col-7">{{ form.experiment(class="form-control form-control-lg") }}</div>
+                </div>
+                <div class="form-row align-items-center">
+                    <div class="col">{{ form.dataset.label() }}</div>
+                    <div class="col-3">{{ form.dataset(class="custom-select") }}</div>
+                    <div class="col">{{ form.datasetparam.label(class="form-control-label") }}</div>
+                    <div class="col-7">{{ form.datasetparam(class="form-control form-control-lg") }}</div>
+                </div>
+                <div class="form-row align-items-center">
+                    <div class="col">{{ form.model.label() }}</div>
+                    <div class="col-3">{{ form.model(class="custom-select") }}</div>
+                    <div class="col">{{ form.modelparam.label(class="form-control-label") }}</div>
+                    <div class="col-7">{{ form.modelparam(class="form-control form-control-lg") }}</div>
+                </div>    
+                <div class="form-row align-items-center">
+                    <div class="col">{{ form.loss.label() }}</div>
+                    <div class="col-3">{{ form.loss(class="custom-select") }}</div>
+                    <div class="col">{{ form.lossparam.label(class="form-control-label") }}</div>
+                    <div class="col-7">{{ form.lossparam(class="form-control form-control-lg") }}</div>
+                </div>
+                <div class="form-row align-items-center">
+                    <div class="col">{{ form.optimizer.label() }}</div>
+                    <div class="col-3">{{ form.optimizer(class="custom-select") }}</div>
+                    <div class="col">{{ form.optimizerparam.label(class="form-control-label") }}</div>
+                    <div class="col-7">{{ form.optimizerparam(class="form-control form-control-lg") }}</div>
+                </div>
+                <div class="form-row align-items-center">
+                    <div class="col-1">{{ form.lrschedule.label() }}</div>
+                    <div class="col-1">{{ form.lrschedule(class="custom-select") }}</div>
+                    <div class="col-1">{{ form.epochs.label(class="form-control-label") }}</div>
+                    <div class="col-1">{{ form.epochs(class="form-control form-control-lg") }}</div>
+                    <div class="col-1">{{ form.batch_size.label(class="form-control-label") }}</div>
+                    <div class="col-1">{{ form.batch_size(class="form-control form-control-lg") }}</div>
+                    <div class="col-1">{{ form.train_worker.label(class="form-control-label") }}</div>
+                    <div class="col-1">{{ form.train_worker(class="form-control form-control-lg") }}</div>
+                    <div class="col-1">{{ form.test_worker.label(class="form-control-label") }}</div>
+                    <div class="col-1">{{ form.test_worker(class="form-control form-control-lg") }}</div>
+                    </div>
+                <div class="form-row align-items-center">
+                    <div class="col-1">{{ form.use_cuda.label() }}</div>
+                    <div class="col-1">{{ form.use_cuda(class="custom-select") }}</div>
+                    <div class="col-1">{{ form.show_rate.label(class="form-control-label") }}</div>
+                    <div class="col-1">{{ form.show_rate(class="form-control form-control-lg") }}</div>
+                    <div class="col-1">{{ form.print_rate.label(class="form-control-label") }}</div>
+                    <div class="col-1">{{ form.print_rate(class="form-control form-control-lg") }}</div>
+                    <div class="col-1">{{ form.save_rate.label(class="form-control-label") }}</div>
+                    <div class="col-1">{{ form.save_rate(class="form-control form-control-lg") }}</div>
+                </div>
+                <div class="form-row align-items-center">
+                    <div class="col-4">
+                        {{ form.parallel(class="form-check-input") }}
+                        {{ form.parallel.label(class="form-check-label") }}
+                    </div>
+                    <div class="col-4">
+                        {{ form.visdom(class="form-check-input") }}
+                        {{ form.visdom.label(class="form-check-label") }}
+                    </div>
+                    <div class="col-4">
+                        {{ form.resume(class="form-check-input") }}
+                        {{ form.resume.label(class="form-check-label") }}
+                    </div>
+                </div>
+            </fieldset>
+            <!-- Button -->
+            <div class="form-group">
+                {{ form.submit(class="btn btn-outline-info") }}
+            </div>
+        </form> 
+</div>
+{% endblock content %}
+
+
+{% block script %}
+    <script>
+        $('#proj').change(function () {
+            window.location = $(this).val();
+        });
+    </script>
+{% endblock script%}
