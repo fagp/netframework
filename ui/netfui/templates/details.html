@@ -1,0 +1,90 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="col-md-12">
+  <button type="button" id="tooglebtn" class="btn btn-success">
+    Clone
+  </button>
+</div>
+<div class="col-md-12">
+    <form method="POST" action="">
+      <fieldset class="form-group">
+      <legend class="border-bottom mb-4">{{ projects[job.pid].name }}: {{ job.arguments['experiment'] }}</legend>
+  <div class="row align-items-center">
+    <div class="col-md-6"><label class="form-control-label">Dataset: {{ job.arguments['dataset'] }}</label></div>
+    {% if job.arguments['datasetparam']=="" %}
+    <div class="col-md-6"><label class="form-control-label">Dataset Parameters: {}</label></div>
+    {% else %}
+    <div class="col-md-6"><label class="form-control-label">Dataset Parameters: {{ job.arguments['datasetparam'] }}</label></div>
+    {% endif %}
+  </div>
+  
+  <div class="row align-items-center">
+    <div class="col-md-6"><label class="form-control-label">Model: {{ job.arguments['model'] }}</label></div>
+    {% if job.arguments['modelparam']=="" %}
+    <div class="col-md-6"><label class="form-control-label">Model Parameters: {}</label></div>
+    {% else %}
+    <div class="col-md-6"><label class="form-control-label">Model Parameters: {{ job.arguments['modelparam'] }}</label></div>
+    {% endif %}
+  </div>
+  
+  <div class="row align-items-center">
+    <div class="col-md-6"><label class="form-control-label">Loss: {{ job.arguments['loss'] }}</label></div>
+    {% if job.arguments['lossparam']=="" %}
+    <div class="col-md-6"><label class="form-control-label">Loss Parameters: {}</label></div>
+    {% else %}
+    <div class="col-md-6"><label class="form-control-label">Loss Parameters: {{ job.arguments['lossparam'] }}</label></div>
+    {% endif %}
+  </div>
+  
+  <div class="row align-items-center">
+    <div class="col-md-6"><label class="form-control-label">Optimizer: {{ job.arguments['optimizer'] }}</label></div>
+    {% if job.arguments['optimizerparam']=="" %}
+    <div class="col-md-6"><label class="form-control-label">Optimizer Parameters: {}</label></div>
+    {% else %}
+    <div class="col-md-6"><label class="form-control-label">Optimizer Parameters: {{ job.arguments['optimizerparam'] }}</label></div>
+    {% endif %}
+  </div>
+  
+  <div class="row align-items-center">
+    <div class="col-md-3"><label class="form-control-label">LRSchedule: {{ job.arguments['lrschedule'] }}</label></div>
+  </div>
+  
+  <div class="row align-items-center">
+      <div class="col-md-6"><label class="form-control-label">GPU: {{ job.arguments['use_cuda'] }}->{{ gpu[job.arguments['use_cuda']] }}</label></div>
+      <div class="col-md-6"><label class="form-control-label">Parallel: {{ job.arguments['parallel'] }}</label></div>
+  </div>
+  
+  <div class="row align-items-center">
+    <div class="col-md-3"><label class="form-control-label">Epochs: {{ job.arguments['epochs'] }}</label></div>
+  </div>
+  <div class="row align-items-center">
+    <div class="col-md-2"><label class="form-control-label">Batch Size: {{ job.arguments['batch_size'] }}</label></div>
+  </div>
+  <div class="row align-items-center">
+    <div class="col-md-2"><label class="form-control-label">Train Worker: {{ job.arguments['train_worker'] }}</label></div>
+  </div>
+  <div class="row align-items-center">
+    <div class="col-md-2"><label class="form-control-label">Test Worker: {{ job.arguments['test_worker'] }}</label></div>
+  </div>
+  <div class="row align-items-center">
+      <div class="col-md-3"><label class="form-control-label">Show Rate: {{ job.arguments['show_rate'] }}</label></div>
+    </div>
+    <div class="row align-items-center">
+      <div class="col-md-3"><label class="form-control-label">Print Rate: {{ job.arguments['print_rate'] }}</label></div>
+    </div>
+    <div class="row align-items-center">
+      <div class="col-md-3"><label class="form-control-label">Save Rate: {{ job.arguments['save_rate'] }}</label></div>
+    </div>
+    <div class="row align-items-center">
+      <div class="col-md-3"><label class="form-control-label">Visdom: {{ job.arguments['visdom'] }}</label></div>
+  </div>
+  
+    <div class="row align-items-center">
+      <div class="col-md-3"><label class="form-control-label">Resume on Error: {{ job.arguments['resume'] }}</label></div>
+  </div>
+    <p>User: {{ job.user }}</p>
+  </form>
+</div>
+
+
+{% endblock content %}

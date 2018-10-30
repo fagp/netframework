@@ -26,7 +26,19 @@ class model():
     
     def __getitem__(self,item):
         done=self.list_all()
+        if str(item)=="-1":
+            item= list(done.keys())[0]
         return done[str(item)]
 
     def save(self,objs):
         json.dump(objs,open(self.model_path,'w'))
+
+    def enable(self,id):
+        done=self.list_all()
+        done[str(id)]['available']='True'
+        self.save(done)
+
+    def disable(self,id):
+        done=self.list_all()
+        done[str(id)]['available']='False'
+        self.save(done)
