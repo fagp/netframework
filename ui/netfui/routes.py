@@ -21,8 +21,7 @@ started_model=model(app.config['paths']['started_path'])
 experiments_model=model(app.config['paths']['queue_path'])
 projects_model=model(app.config['paths']['projects_path'])
 netfui_path= os.path.dirname( app.config['paths']['queue_path'] )
-python_path= os.path.dirname( app.config['paths']['python_path'] )
-
+python_path= app.config['paths']['python_path']
 
 #init: if there is any experiment in started then push back to queue-OK
 started=started_model.list_all() 
@@ -91,6 +90,8 @@ def begin(expid):
             experiments_model.save(experiments)
 
             argsstr=dict2str(args)
+            global python_path
+            print(python_path)
             command='exec '+python_path+" -u "+current_proj['exec']+argsstr
             global process
             print(command)

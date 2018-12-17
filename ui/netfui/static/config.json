@@ -6,6 +6,6 @@
      "started_path":"/home/pwrai/netfui/started.json",
      "error_path":"/home/pwrai/netfui/error.json",
      "projects_path":"/home/pwrai/netfui/projects.json",
-      "python_path":"python"
+     "python_path":"python"
   }
 }
