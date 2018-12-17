@@ -1,10 +1,11 @@
 {
   "paths":
   {
-     "queue_path":"/home/fillo/netfui/queue.json",
-     "done_path":"/home/fillo/netfui/done.json",
-     "started_path":"/home/fillo/netfui/started.json",
-     "error_path":"/home/fillo/netfui/error.json",
-     "projects_path":"/home/fillo/netfui/projects.json"
+     "queue_path":"/home/pwrai/netfui/queue.json",
+     "done_path":"/home/pwrai/netfui/done.json",
+     "started_path":"/home/pwrai/netfui/started.json",
+     "error_path":"/home/pwrai/netfui/error.json",
+     "projects_path":"/home/pwrai/netfui/projects.json",
+      "python_path":"python"
   }
 }

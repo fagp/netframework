@@ -21,6 +21,8 @@ started_model=model(app.config['paths']['started_path'])
 experiments_model=model(app.config['paths']['queue_path'])
 projects_model=model(app.config['paths']['projects_path'])
 netfui_path= os.path.dirname( app.config['paths']['queue_path'] )
+python_path= os.path.dirname( app.config['paths']['python_path'] )
+
 
 #init: if there is any experiment in started then push back to queue-OK
 started=started_model.list_all() 
@@ -89,7 +91,7 @@ def begin(expid):
             experiments_model.save(experiments)
 
             argsstr=dict2str(args)
-            command='exec '+os.environ['_']+" -u "+current_proj['exec']+argsstr
+            command='exec '+python_path+" -u "+current_proj['exec']+argsstr
             global process
             print(command)
             process[started_model.last_index] = subprocess.Popen(command, stdout=subprocess.PIPE ,shell=True, cwd=current_proj['path'])
@@ -376,6 +378,9 @@ def killstarted(pid):
     pid=str(pid)
     global tokill
     tokill[pid]=process[pid]
+    
+    global exp_queue
+    exp_queue=True
 
     return redirect(url_for('toogle_queue'))
 

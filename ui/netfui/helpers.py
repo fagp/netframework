@@ -21,10 +21,13 @@ def available_gpus():
     gpus=list_gpus()
     available=list()
     global used_gpus
+
     for gpu in gpus:
         if gpu['used']/gpu['total'] <0.5 and not gpu['id'] in used_gpus:
             available += [gpu['id']]
 
+    #print(gpus)
+    #print(available)
     return available
 
 def list_datasets(projects,pid):
