@@ -36,6 +36,7 @@ exp_queue=False
 
 process=dict() #used to watch running processes
 tokill=dict()
+lock_exp=dict()
 
 def show_progress():
     global process
@@ -61,9 +62,11 @@ def show_progress():
 #begin process for experiment
 def begin(expid):
     expid=str(expid) #keys are strings, so cast!
+    
     experiments=experiments_model.list_all()
     projects=projects_model.list_all()
     agpus=available_gpus()
+    started=started_model.list_all()
     global used_gpus
     if len(agpus)>0 and len(list(experiments.keys()))>0:
         if expid=="-1": #select first experiment in queue
@@ -75,10 +78,24 @@ def begin(expid):
                         use_cuda=(agpus[0])
                     else:
                         use_cuda=int(exp['arguments']['use_cuda'])
-                    used_gpus += [use_cuda]
                     break
+                    
+        for eid, exp in list(started.items()):
+            if exp['arguments']['experiment']==experiments[expid]['arguments']['experiment']:
+                print('Process ',expid,' is running already')
+                socketio.emit('job complete') 
+                return
+                    
+        if not expid in list(lock_exp.keys()): #critical region lock
+            lock_exp[expid]=1
+            print('Process ',expid,' is begining already')
+            
+        else:
+            socketio.emit('job complete') 
+            return
 
         if expid!="-1":
+            used_gpus += [use_cuda]
             exp=experiments[expid]
             args=exp['arguments']
             args['use_cuda']=str(use_cuda)
@@ -96,6 +113,8 @@ def begin(expid):
             global process
             print(command)
             process[started_model.last_index] = subprocess.Popen(command, stdout=subprocess.PIPE ,shell=True, cwd=current_proj['path'])
+    
+        del lock_exp[expid]
 
 
 #thread to watch running experiments
