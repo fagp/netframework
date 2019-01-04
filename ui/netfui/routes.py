@@ -201,7 +201,7 @@ def home():
             started[pid]['valid']=True
             v*=-1
         started[pid]['progress']=100*v/float(started[pid]['arguments']['epochs'])
-        #print(started[pid]['progress'])
+        print(started[pid]['progress'])
 
     done=done_model.list_all()
     global exp_queue
