@@ -43,6 +43,7 @@ def show_progress():
     while True:
         try:
             for pid,pr in list(process.items()):
+                #read std out
                 line = pr.stdout.readline()
                 if line.decode("utf-8").find('[0/') >=0:
                     started=started_model.list_all()
@@ -55,6 +56,17 @@ def show_progress():
                     started_model.save(started)
 
                     socketio.emit('job complete') 
+                #read std err and add to log
+                errline = pr.stderr.readline()
+                if errline.decode("utf-8")!='':
+                    started=started_model.list_all()
+                    epparse=errline.decode("utf-8")
+                    if not ('log' in list(started[pid].keys())):
+                        started[pid]['log']='Errors:\n'
+                    now=datetime.datetime.now()
+                    started[pid]['log']+= str(now.month)+'/'+str(now.day)+'/'+str(now.year)+': '+epparse
+                    started_model.save(started)
+
         except:
             pass
         time.sleep(0.01)
@@ -82,13 +94,13 @@ def begin(expid):
                     
         for eid, exp in list(started.items()):
             if exp['arguments']['experiment']==experiments[expid]['arguments']['experiment']:
-                print('Process ',expid,' is running already')
+                print('Log: Process ',expid,' is running already')
                 socketio.emit('job complete') 
                 return
                     
         if not expid in list(lock_exp.keys()): #critical region lock
             lock_exp[expid]=1
-            print('Process ',expid,' is begining already')
+            print('Log: Starting process ',expid)
             
         else:
             socketio.emit('job complete') 
@@ -108,11 +120,10 @@ def begin(expid):
 
             argsstr=dict2str(args)
             global python_path
-            print(python_path)
             command='exec '+python_path+" -u "+current_proj['exec']+argsstr
             global process
             print(command)
-            process[started_model.last_index] = subprocess.Popen(command, stdout=subprocess.PIPE ,shell=True, cwd=current_proj['path'])
+            process[started_model.last_index] = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE ,shell=True, cwd=current_proj['path'])
     
         del lock_exp[expid]
 
@@ -128,7 +139,7 @@ def watch_train():
             started=started_model.list_all()
             for expid, cstarted in list(started.items()):
                 if expid in list(tokill.keys()): #if process exist
-                    print('killing ',tokill[expid].pid)
+                    print('Log: Killing process ',tokill[expid].pid)
                     p=tokill[expid]
                     p.kill()
                     del tokill[expid]   
@@ -160,7 +171,7 @@ def watch_train():
                         used_gpus.remove(int(cstarted['arguments']['use_cuda']))
 
                         socketio.emit('job complete')     
-                        print('job complete')           
+                        print('Log: Training complete ',expid)           
                         del process[expid]    
 
             if exp_queue:   
@@ -190,7 +201,7 @@ def home():
             started[pid]['valid']=True
             v*=-1
         started[pid]['progress']=100*v/float(started[pid]['arguments']['epochs'])
-        print(started[pid]['progress'])
+        #print(started[pid]['progress'])
 
     done=done_model.list_all()
     global exp_queue

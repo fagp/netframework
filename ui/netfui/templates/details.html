@@ -57,31 +57,49 @@
   <div class="row align-items-center">
     <div class="col-md-3"><label class="form-control-label">Epochs: {{ job.arguments['epochs'] }}</label></div>
   </div>
+
+  <div class="row">
+  <div class="col-md-6">
   <div class="row align-items-center">
-    <div class="col-md-2"><label class="form-control-label">Batch Size: {{ job.arguments['batch_size'] }}</label></div>
-  </div>
-  <div class="row align-items-center">
-    <div class="col-md-2"><label class="form-control-label">Train Worker: {{ job.arguments['train_worker'] }}</label></div>
-  </div>
-  <div class="row align-items-center">
-    <div class="col-md-2"><label class="form-control-label">Test Worker: {{ job.arguments['test_worker'] }}</label></div>
-  </div>
-  <div class="row align-items-center">
-      <div class="col-md-3"><label class="form-control-label">Show Rate: {{ job.arguments['show_rate'] }}</label></div>
-    </div>
-    <div class="row align-items-center">
-      <div class="col-md-3"><label class="form-control-label">Print Rate: {{ job.arguments['print_rate'] }}</label></div>
-    </div>
-    <div class="row align-items-center">
-      <div class="col-md-3"><label class="form-control-label">Save Rate: {{ job.arguments['save_rate'] }}</label></div>
-    </div>
-    <div class="row align-items-center">
-      <div class="col-md-3"><label class="form-control-label">Visdom: {{ job.arguments['visdom'] }}</label></div>
+    <div class="col-md-12"><label class="form-control-label">Batch Size: {{ job.arguments['batch_size'] }}</label></div>
   </div>
   
-    <div class="row align-items-center">
-      <div class="col-md-3"><label class="form-control-label">Resume on Error: {{ job.arguments['resume'] }}</label></div>
+  <div class="row align-items-center">
+    <div class="col-md-12"><label class="form-control-label">Train Worker: {{ job.arguments['train_worker'] }}</label></div>
   </div>
+  
+  <div class="row align-items-center">
+    <div class="col-md-12"><label class="form-control-label">Test Worker: {{ job.arguments['test_worker'] }}</label></div>
+  </div>
+  
+  <div class="row align-items-center">
+      <div class="col-md-12"><label class="form-control-label">Show Rate: {{ job.arguments['show_rate'] }}</label></div>
+  </div>
+  
+  <div class="row align-items-center">
+    <div class="col-md-12"><label class="form-control-label">Print Rate: {{ job.arguments['print_rate'] }}</label></div>
+  </div>
+  
+  <div class="row align-items-center">
+    <div class="col-md-12"><label class="form-control-label">Save Rate: {{ job.arguments['save_rate'] }}</label></div>
+  </div>
+  
+  <div class="row align-items-center">
+      <div class="col-md-12"><label class="form-control-label">Visdom: {{ job.arguments['visdom'] }}</label></div>
+  </div>
+  
+  <div class="row align-items-center">
+      <div class="col-md-12"><label class="form-control-label">Resume on Error: {{ job.arguments['resume'] }}</label></div>
+  </div>
+</div>
+{% if job['log'] %}
+<div class="col-md-6">
+  <div class="row align-items-center">
+    <div class="col-md-12"><label class="form-control-label" style="white-space: pre-wrap;">Log: {{ job['log'] }}</label></div>
+  </div>
+</div>
+{% endif %}
+</div>
     <p>User: {{ job.user }}</p>
   </form>
 </div>
