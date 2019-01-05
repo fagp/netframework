@@ -1,6 +1,8 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="col-md-12">
+<div class="row">
+  <div class="col-md-12">
+<div class="btn-group" role="group" aria-label="GPUs"> 
     {% if exp_queue==False %}  
     <button type="button" id="tooglebtn" class="btn btn-success">
       Start Queue
@@ -10,6 +12,21 @@
       Stop Queue
     </button>
   {% endif %}
+{% for gpu,tgpu in tuse_gpu.items() %}
+{% if tgpu==True %}  
+<a class="btn btn-success btn-sm" href="/experiment/toogle_gpu/{{ gpu }}">
+  <div><i class="fa fa-check-square-o" style="font-size:1.5em;"></i>
+  <small>{{ gpu }}</small></div>
+</a>
+{% else %}
+<a class="btn btn-success btn-sm" href="/experiment/toogle_gpu/{{ gpu }}">
+  <div><i class="fa fa-square-o" style="font-size:1.5em;"></i>
+  <small>{{ gpu }}</small></div>
+</a>
+{% endif %}
+{% endfor %}
+</div>
+</div>
 </div>
 
 {% if started %}
@@ -20,7 +37,7 @@
     <div class="list-group">
     {% for expid,job in started.items() %}
     <div class="btn-group">
-    <a href="/experiment/details_run/{{ expid }}" class="list-group-item list-group-item-action flex-column align-items-start">
+    <a href="/experiment/details_run/{{ expid }}" style="border-radius: 4px 0px 0px 4px;" class="list-group-item list-group-item-action flex-column align-items-start">
       <div class="d-flex w-100 justify-content-between">
         <h5 class="mb-1">Job: {{ job.arguments['experiment'] }}</h5>
         <div class="w-50 progress progress-striped active">
@@ -47,13 +64,14 @@
           <small>User: {{ job.user }}</small>
       </div>
     </a>
-    <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <span class="sr-only">Toggle Dropdown</span>
-      </button>
-      <div class="dropdown-menu">
-          <a class="dropdown-item" href="/experiment/clone_run/{{ expid }}">Clone</a>
-        <a class="dropdown-item" href="{{url_for('killstarted',pid=expid)}}">Stop</a>
-      </div>
+    <a class="btn btn-success btn-sm" href="/experiment/clone_run/{{ expid }}">
+      <div><i class="fa fa-clone" style="font-size:1.5em;"></i></div>
+      <div><small>clone</small></div>
+    </a>
+    <a class="btn btn-danger btn-sm" href="{{url_for('killstarted',pid=expid)}}">
+      <div><i class="fa fa-stop" style="font-size:1.5em;"></i></div>
+      <div><small>stop</small></div>
+    </a>
   </div>
     {% endfor %}
   </div>
@@ -123,7 +141,7 @@
     <div class="list-group">
     {% for expid,job in error.items() %}
     <div class="btn-group">
-    <a href="/experiment/details_error/{{ expid }}" class="list-group-item list-group-item-action flex-column align-items-start">
+    <a href="/experiment/details_error/{{ expid }}" style="border-radius: 4px 0px 0px 4px;" class="list-group-item list-group-item-action flex-column align-items-start">
         <div class="d-flex w-100 justify-content-between">
           <h5 class="mb-1">Job: {{ job.arguments['experiment'] }}</h5>
           <small>{{ job.date }}</small>
@@ -139,16 +157,22 @@
             <small>User: {{ job.user }}</small>
         </div>
     </a>
-    <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <span class="sr-only">Toggle Dropdown</span>
-      </button>
-      <div class="dropdown-menu">
-        <a class="dropdown-item" href="{{ url_for('enqueue',pid=expid) }}">Enqueue</a>
-        <a class="dropdown-item" href="/experiment/update_error/{{ expid }}">Update</a>
-        <a class="dropdown-item" href="/experiment/clone_error/{{ expid }}">Clone</a>
-        <div class="dropdown-divider"></div>
-        <a class="dropdown-item" href="{{url_for('rmerror',pid=expid)}}">Remove</a>
-      </div>
+    <a class="btn btn-success btn-sm" href="{{ url_for('enqueue',pid=expid) }}">
+      <div><i class="fa fa-check" style="font-size:1.5em;"></i></div>
+      <div><small>enqueue</small></div>
+    </a>
+    <a class="btn btn-success btn-sm" href="/experiment/clone_error/{{ expid }}">
+      <div><i class="fa fa-clone" style="font-size:1.5em;"></i></div>
+      <div><small>clone</small></div>
+    </a>
+    <a class="btn btn-success btn-sm" href="/experiment/update_error/{{ expid }}">
+      <div><i class="fa fa-pencil-square-o" style="font-size:1.5em;"></i></div>
+      <div><small>update</small></div>
+    </a>
+    <a class="btn btn-danger btn-sm" href="{{url_for('rmerror',pid=expid)}}">
+      <div><i class="fa fa-trash" style="font-size:1.5em;"></i></div>
+      <div><small>remove</small></div>
+    </a>
   </div>
     {% endfor %}
   </div>
@@ -163,7 +187,7 @@
     <div class="list-group">
     {% for expid,job in done.items() %}
     <div class="btn-group">
-    <a href="/experiment/details_done/{{ expid }}" class="list-group-item list-group-item-action flex-column align-items-start">
+    <a href="/experiment/details_done/{{ expid }}" style="border-radius: 4px 0px 0px 4px;" class="list-group-item list-group-item-action flex-column align-items-start">
         <div class="d-flex w-100 justify-content-between">
           <h5 class="mb-1">Job: {{ job.arguments['experiment'] }}</h5>
           <small>{{ job.date }}</small>
@@ -179,14 +203,14 @@
             <small>User: {{ job.user }}</small>
         </div>
     </a>
-    <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <span class="sr-only">Toggle Dropdown</span>
-      </button>
-      <div class="dropdown-menu">
-          <a class="dropdown-item" href="/experiment/clone_done/{{ expid }}">Clone</a>
-        <div class="dropdown-divider"></div>
-        <a class="dropdown-item" href="{{url_for('rmdone',pid=expid)}}">Remove</a>
-      </div>
+    <a class="btn btn-success btn-sm" href="/experiment/clone_done/{{ expid }}">
+      <div><i class="fa fa-clone" style="font-size:1.5em;"></i></div>
+      <div><small>clone</small></div>
+    </a>
+    <a class="btn btn-danger btn-sm" href="{{url_for('rmdone',pid=expid)}}">
+      <div><i class="fa fa-trash" style="font-size:1.5em;"></i></div>
+      <div><small>remove</small></div>
+    </a>
   </div>
     {% endfor %}
   </div>

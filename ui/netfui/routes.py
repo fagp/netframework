@@ -37,39 +37,54 @@ exp_queue=False
 process=dict() #used to watch running processes
 tokill=dict()
 lock_exp=dict()
+progress_thread=dict()
+error_thread=dict()
 
-def show_progress():
+def show_error(pid,pr):
     global process
-    while True:
+    time.sleep(1)
+    while pid in list(process.keys()):
         try:
-            for pid,pr in list(process.items()):
-                #read std out
-                line = pr.stdout.readline()
-                if line.decode("utf-8").find('[0/') >=0:
-                    started=started_model.list_all()
-                    epparse=line.decode("utf-8").split('[')
-                    phase=epparse[0][2:-2]
-                    cepoch=int(epparse[1][0:-1])
-                    if phase=='Valid':
-                        cepoch*=-1
-                    started[pid]['progress']=cepoch
-                    started_model.save(started)
-
-                    socketio.emit('job complete') 
-                #read std err and add to log
-                errline = pr.stderr.readline()
-                if errline.decode("utf-8")!='':
-                    started=started_model.list_all()
-                    epparse=errline.decode("utf-8")
-                    if not ('log' in list(started[pid].keys())):
-                        started[pid]['log']='Errors:\n'
-                    now=datetime.datetime.now()
-                    started[pid]['log']+= str(now.month)+'/'+str(now.day)+'/'+str(now.year)+': '+epparse
-                    started_model.save(started)
+            #read std err and add to log
+            errline = pr.stderr.readline()
+            if errline.decode("utf-8")!='':
+                started=started_model.list_all()
+                epparse=errline.decode("utf-8")
+                if not ('log' in list(started[pid].keys())):
+                    started[pid]['log']='Errors:\n'
+                now=datetime.datetime.now()
+                started[pid]['log']+= str(now.month)+'/'+str(now.day)+'/'+str(now.year)+': '+epparse
+                started_model.save(started)
 
         except:
             pass
         time.sleep(0.01)
+    
+    del error_thread[pid]
+
+def show_progress(pid,pr):
+    global process
+    time.sleep(1)
+    while pid in list(process.keys()):
+        try:
+            #read std out
+            line = pr.stdout.readline()
+            if line.decode("utf-8").find('[0/') >=0:
+                started=started_model.list_all()
+                epparse=line.decode("utf-8").split('[')
+                phase=epparse[0][2:-2]
+                cepoch=int(epparse[1][0:-1])
+                if phase=='Valid':
+                    cepoch*=-1
+                started[pid]['progress']=cepoch
+                started_model.save(started)
+                socketio.emit('job complete') 
+
+        except:
+            pass
+        time.sleep(0.01)
+
+    del progress_thread[pid]
     
 #begin process for experiment
 def begin(expid):
@@ -94,14 +109,12 @@ def begin(expid):
                     
         for eid, exp in list(started.items()):
             if exp['arguments']['experiment']==experiments[expid]['arguments']['experiment']:
-                print('Log: Process ',expid,' is running already')
+                print('Log: Process ',exp['arguments']['experiment'],' is running already')
                 socketio.emit('job complete') 
                 return
                     
         if not expid in list(lock_exp.keys()): #critical region lock
             lock_exp[expid]=1
-            print('Log: Starting process ',expid)
-            
         else:
             socketio.emit('job complete') 
             return
@@ -109,7 +122,11 @@ def begin(expid):
         if expid!="-1":
             used_gpus += [use_cuda]
             exp=experiments[expid]
+            print('Log: Starting process ',exp['arguments']['experiment'])
             args=exp['arguments']
+            if args['resume']=='False':
+                exp['log']='Errors:\n'
+
             args['use_cuda']=str(use_cuda)
             current_proj=projects[exp['pid']]
             exp['progress']='0'
@@ -123,7 +140,15 @@ def begin(expid):
             command='exec '+python_path+" -u "+current_proj['exec']+argsstr
             global process
             print(command)
-            process[started_model.last_index] = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE ,shell=True, cwd=current_proj['path'])
+            slindex=started_model.last_index
+            process[slindex] = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE ,shell=True, cwd=current_proj['path'])
+
+            progress_thread[slindex] = Thread(target=show_progress,args=(slindex,process[slindex]), daemon=True)
+            progress_thread[slindex].start()
+
+            error_thread[slindex] = Thread(target=show_error,args=(slindex,process[slindex]), daemon=True)
+            error_thread[slindex].start()
+
     
         del lock_exp[expid]
 
@@ -139,7 +164,7 @@ def watch_train():
             started=started_model.list_all()
             for expid, cstarted in list(started.items()):
                 if expid in list(tokill.keys()): #if process exist
-                    print('Log: Killing process ',tokill[expid].pid)
+                    print('Log: Killing process ',cstarted['arguments']['experiment'])
                     p=tokill[expid]
                     p.kill()
                     del tokill[expid]   
@@ -171,7 +196,7 @@ def watch_train():
                         used_gpus.remove(int(cstarted['arguments']['use_cuda']))
 
                         socketio.emit('job complete')     
-                        print('Log: Training complete ',expid)           
+                        print('Log: Training complete ',cstarted['arguments']['experiment'])           
                         del process[expid]    
 
             if exp_queue:   
@@ -182,9 +207,6 @@ def watch_train():
 
 watch_thread = Thread(target=watch_train, daemon=True)
 watch_thread.start()
-
-progress_thread = Thread(target=show_progress, daemon=True)
-progress_thread.start()
 
 #render list of all experiments-OK
 @app.route("/")
@@ -201,11 +223,11 @@ def home():
             started[pid]['valid']=True
             v*=-1
         started[pid]['progress']=100*v/float(started[pid]['arguments']['epochs'])
-        print(started[pid]['progress'])
+        #print(started[pid]['progress'])
 
     done=done_model.list_all()
     global exp_queue
-    return render_template('home.html', jobs=jobs, projects=projects, started=started, done=done, error=error,exp_queue=exp_queue)
+    return render_template('home.html', jobs=jobs, projects=projects, started=started, done=done, error=error,exp_queue=exp_queue,tuse_gpu=touse_gpus)
 
 #render project-OK
 @app.route("/project", methods=['GET', 'POST'])
@@ -362,6 +384,13 @@ def experiment(pid=-1,expid=-1):
 def toogle_queue():
     global exp_queue
     exp_queue=not exp_queue
+    return redirect(url_for('start'))
+
+#toogle gpu on/off-OK
+@app.route("/experiment/toogle_gpu/<gpuname>")
+def toogle_gpu(gpuname):
+    global touse_gpus
+    touse_gpus[gpuname]=not touse_gpus[gpuname]
     return redirect(url_for('start'))
 
 #start experiments in queue-OK

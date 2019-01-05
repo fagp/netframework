@@ -3,6 +3,7 @@ import json
 import subprocess
 
 used_gpus=list()
+touse_gpus=dict()
 
 def list_gpus():
     p = subprocess.Popen(["nvidia-smi","--query-gpu=index,memory.total,memory.used,name", "--format=csv,noheader,nounits"], stdout=subprocess.PIPE)
@@ -17,13 +18,17 @@ def list_gpus():
             
     return gpus
 
+for gpu in list_gpus():
+    touse_gpus[str(gpu['id'])+':'+gpu['name']]=True
+
 def available_gpus():
     gpus=list_gpus()
     available=list()
     global used_gpus
+    global touse_gpus
 
     for gpu in gpus:
-        if gpu['used']/gpu['total'] <0.5 and not gpu['id'] in used_gpus:
+        if (touse_gpus[str(gpu['id'])+':'+gpu['name']]) and (gpu['used']/gpu['total'] <0.5 and not gpu['id'] in used_gpus):
             available += [gpu['id']]
 
     #print(gpus)
