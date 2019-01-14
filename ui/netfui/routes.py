@@ -122,6 +122,7 @@ def begin(expid):
         if expid!="-1":
             used_gpus += [use_cuda]
             exp=experiments[expid]
+            now=datetime.datetime.now(); exp['sdate']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
             print('Log: Starting process ',exp['arguments']['experiment'])
             args=exp['arguments']
             if args['resume']=='False':
@@ -186,6 +187,7 @@ def watch_train():
                         started_model.save(started)
                         if pr.returncode==0: #job completed 
                             # print('p end well')
+                            now=datetime.datetime.now(); cstarted['ddate']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
                             done=done_model.push_back(cstarted)
                             done_model.save(done)
                         else: #job error
