@@ -230,10 +230,13 @@
 <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.min.js"></script>
+
 <script type="text/javascript">
   var socket = io.connect('http://' + document.domain + ':' + location.port);
+  var sneaky = new ScrollSneak(location.hostname)
   socket.on( 'job complete', function( msg ) {
     console.log( msg )
+    sneaky.sneak()
     window.location.replace('http://' + document.domain + ':' + location.port + '/experiment/start');
   })
 </script>
