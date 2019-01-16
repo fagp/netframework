@@ -108,7 +108,7 @@ def begin(expid):
                     break
                     
         for eid, exp in list(started.items()):
-            if exp['arguments']['experiment']==experiments[expid]['arguments']['experiment']:
+            if expid!="-1" and exp['arguments']['experiment']==experiments[expid]['arguments']['experiment']:
                 print('Log: Process ',exp['arguments']['experiment'],' is running already')
                 socketio.emit('job complete') 
                 return
@@ -128,15 +128,20 @@ def begin(expid):
             if args['resume']=='False':
                 exp['log']='Errors:\n'
 
+            prev_gpu=args['use_cuda']
             args['use_cuda']=str(use_cuda)
             current_proj=projects[exp['pid']]
             exp['progress']='0'
+            argsstr=dict2str(args)
+            args['use_cuda']=prev_gpu
+            
             started=started_model.push_back(exp)
             started_model.save(started)
             experiments=experiments_model.remove(expid)
             experiments_model.save(experiments)
 
-            argsstr=dict2str(args)
+            
+
             global python_path
             command='exec '+python_path+" -u "+current_proj['exec']+argsstr
             global process
