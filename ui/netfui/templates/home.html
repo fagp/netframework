@@ -88,7 +88,12 @@
     <div class="btn-group">
     <a href="/experiment/details_queue/{{ expid }}" style="border-radius: 4px 0px 0px 4px;" class="list-group-item list-group-item-action flex-column align-items-start">
         <div class="d-flex w-100 justify-content-between">
+          <div class="row">
+            {% if job['available']=='False' %}
+            <i class="fa fa-exclamation-triangle" style="font-size:1.5em;" data-toggle="tooltip" data-placement="bottom" title="Experiment locked. Click update and confirm the settings to unlock."></i>
+            {% endif %}
           <h5 class="mb-1">Job: {{ job.arguments['experiment'] }}</h5>
+          </div>
           <small>{{ job.date }}</small>
         </div>
         <div class="d-flex w-100 justify-content-between">

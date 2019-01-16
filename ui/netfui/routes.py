@@ -133,6 +133,7 @@ def begin(expid):
             current_proj=projects[exp['pid']]
             exp['progress']='0'
             argsstr=dict2str(args)
+            exp['used_gpu']=args['use_cuda']
             args['use_cuda']=prev_gpu
             
             started=started_model.push_back(exp)
@@ -180,7 +181,7 @@ def watch_train():
                     started=started_model.remove(expid)
                     started_model.save(started)
 
-                    used_gpus.remove(int(cstarted['arguments']['use_cuda']))
+                    used_gpus.remove(int(cstarted['used_gpu']))
 
                     socketio.emit('job complete')                
                     del process[expid]
@@ -200,7 +201,7 @@ def watch_train():
                             error=error_model.push_back(cstarted)
                             error_model.save(error)
 
-                        used_gpus.remove(int(cstarted['arguments']['use_cuda']))
+                        used_gpus.remove(int(cstarted['used_gpu']))
 
                         socketio.emit('job complete')     
                         print('Log: Training complete ',cstarted['arguments']['experiment'])           
