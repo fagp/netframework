@@ -1,4 +1,7 @@
 import json
+from threading import Lock
+
+mutex = Lock()
 
 class model():
     def __init__(self,json_path):
@@ -6,7 +9,9 @@ class model():
         self.last_index=-1
 
     def list_all(self):
+        mutex.acquire()
         done=json.load(open(self.model_path))
+        mutex.release()
         return done
 
     def remove(self,id):
@@ -31,7 +36,9 @@ class model():
         return done[str(item)]
 
     def save(self,objs):
+        mutex.acquire()
         json.dump(objs,open(self.model_path,'w'))
+        mutex.release()
 
     def enable(self,id):
         done=self.list_all()
