@@ -44,6 +44,9 @@ class TestForm(FlaskForm):
     inputs  = StringField('Input path')
     inputsarg = StringField('Input argument name')
 
+    outputs  = StringField('Output path')
+    outputsarg = StringField('Output argument name')
+
     otherarg = StringField('Other arguments')
     use_cuda = SelectField('GPU',choices=[])
 

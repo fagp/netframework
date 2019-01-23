@@ -15,12 +15,19 @@
       <div class="col-md-6"><label class="form-control-label">--{{ job.arguments['inputsarg'] }}={{ job.arguments['pathinputs'] }}</label></div>
     </div>
 
-    <div class="row">
+    <div class="row align-items-center">
         {% if job.arguments['otherarg']!="" %}
         <div class="col-md-6"><label class="form-control-label">{{ job.arguments['otherarg'] }}</label></div>
         {% endif %}
-    <div class="col-md-6"><label class="form-control-label">Files:</label>
-      <label class="form-control-label">{{ job.arguments['inputs'] }}</label>
+        <div class="col-md-6"><label class="form-control-label">--{{ job.arguments['outputsarg'] }}={{ job.arguments['outputs'] }}</label></div>
+      </div>
+
+    <div class="row">
+    <div class="col-md-6"><label class="form-control-label">Files in processed:</label>
+      <label class="form-control-label">{{ job.arguments['pinputs'][:10] }}...</label>
+    </div>
+    <div class="col-md-6"><label class="form-control-label">Files in queue:</label>
+      <label class="form-control-label">{{ job.arguments['inputs'][:10] }}...</label>
     </div>
     </div>
     

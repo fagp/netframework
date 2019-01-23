@@ -1,6 +1,7 @@
 import os
 import json
 import subprocess
+import glob
 
 used_gpus=list()
 touse_gpus=dict()
@@ -53,7 +54,7 @@ def list_loss(projects,pid):
     loss=json.load(open(loss_path))
     return list(loss.keys())
 
-def load_net(projects,pid):
+def load_net(projects,pid,modelfilter=''):
     prj=projects[str(pid)]
     lfolder=''
     folder_path=prj['path']
@@ -64,6 +65,8 @@ def load_net(projects,pid):
     directories = sorted(os.listdir(net_path))
     models = dict()
     for folder in sorted(directories):
+        if modelfilter!='' and modelfilter!=folder:
+            continue
         if not os.path.exists(net_path+'/'+folder+'/model'):
             continue
         list_files=sorted(os.listdir(net_path+'/'+folder+'/model'))
@@ -76,7 +79,11 @@ def load_net(projects,pid):
     return models
 
 def load_input(input_path):
-    directories = os.listdir(input_path)
+    if os.path.isdir(input_path):
+        input_path=os.path.join(input_path,'*')
+    directories = glob.glob(input_path)
+
+    # directories = os.listdir(input_path)
     return directories
 
 def dict2str(arguments):
@@ -96,7 +103,10 @@ def dict2str(arguments):
 def dict2str_test(arguments,nets):
     key1,key2=arguments['model'].split('/')
     argsstr =" --"+arguments['modelarg']+"="+nets[key1][key2]
-    argsstr+=" --"+arguments['inputsarg']+"="+os.path.join( arguments['pathinputs'], arguments['inputs'][0] )
+    argsstr+=" --"+arguments['inputsarg']+"="+arguments['inputs'][0]
+    filename, _ = os.path.splitext(arguments['inputs'][0])
+    _,filename=os.path.split(filename)
+    argsstr+=" --"+arguments['outputsarg']+"="+os.path.join( arguments['outputs'], filename )
     argsstr+=" "+arguments['otherarg']
     
     return argsstr

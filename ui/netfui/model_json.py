@@ -10,7 +10,10 @@ class model():
 
     def list_all(self):
         mutex.acquire()
-        done=json.load(open(self.model_path))
+        try:
+            done=json.load(open(self.model_path))
+        except:
+            done=dict()
         mutex.release()
         return done
 

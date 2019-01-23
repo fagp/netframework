@@ -41,6 +41,7 @@ progress_thread=dict()
 error_thread=dict()
 
 def show_error(pid,pr):
+    print('Log: Error progress track')
     global process
     time.sleep(1)
     while pid in list(process.keys()):
@@ -63,8 +64,10 @@ def show_error(pid,pr):
         del error_thread[pid]
     except:
         pass
+    print('Log: Ending error progress track')
 
 def show_progress(pid,pr):
+    print('Log: Train progress track')
     global process
     time.sleep(1)
     while pid in list(process.keys()):
@@ -127,11 +130,10 @@ def begin(expid):
             now=datetime.datetime.now(); exp['sdate']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
             print('Log: Starting process ',exp['arguments']['experiment'])
             args=exp['arguments']
-            if ('test' in list(exp.keys()) and exp['test']=='True'):
+            if ('test' in list(exp.keys()) and exp['test']=='True'):#if testing
                 exp['log']='Errors:\n'
                 args['epochs']=len(args['inputs'])
-            
-            if 'resume' in list(args.keys()) and args['resume']=='False':
+            elif args['resume']=='False': #if train and resume is false
                 exp['log']='Errors:\n'
 
             prev_gpu=args['use_cuda']
@@ -140,7 +142,8 @@ def begin(expid):
             exp['progress']='0'
 
             if ('test' in list(exp.keys()) and exp['test']=='True'):
-                nets=load_net(projects,exp['pid'])
+                key1,key2=args['model'].split('/')
+                nets=load_net(projects,exp['pid'],key1)
                 argsstr=dict2str_test(args,nets)
                 prexec=current_proj['test_exec']
                 prpath=current_proj['test_path']
@@ -178,6 +181,7 @@ def begin(expid):
 
 #thread to watch running experiments
 def watch_train():
+    print('Log: Init watch process')
     global process
     global tokill
     global used_gpus #only one job per gpu
@@ -218,7 +222,8 @@ def watch_train():
                                 args['use_cuda']=cstarted['used_gpu']
                                 projects=projects_model.list_all()
                                 current_proj=projects[cstarted['pid']]
-                                nets=load_net(projects,cstarted['pid'])
+                                key1,key2=args['model'].split('/')
+                                nets=load_net(projects,cstarted['pid'],key1)
                                 argsstr=dict2str_test(args,nets)
                                 prexec=current_proj['test_exec']
                                 prpath=current_proj['test_path']
@@ -239,6 +244,9 @@ def watch_train():
                                 socketio.emit('job complete')   
 
                             else: #if training ends
+                                if ('test' in list(cstarted.keys()) and cstarted['test']=='True'):
+                                    last_input=cstarted['arguments']['inputs'].pop(0)
+                                    cstarted['arguments']['pinputs']+=[last_input]
                                 now=datetime.datetime.now(); cstarted['ddate']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
                                 done=done_model.push_back(cstarted)
                                 done_model.save(done)
@@ -256,7 +264,7 @@ def watch_train():
                         if finished:
                             used_gpus.remove(int(cstarted['used_gpu']))  
                             del process[expid] 
-                        socketio.emit('job complete')   
+                        socketio.emit('job complete')  
                                    
             if exp_queue:   
                 begin(-1)
@@ -363,9 +371,11 @@ def test(pid=-1,expid=-1):
         args['model']           =str(form.model.data)
         args['modelarg']        =str(form.modelarg.data)
         args['pathinputs']      =str(form.inputs.data)
-        args['inputs']           =load_input(str(form.inputs.data))
-        args['inputsarg']        =str(form.inputsarg.data)
-        args['pinputs']          =[]
+        args['outputs']         =str(form.outputs.data)
+        args['outputsarg']      =str(form.outputsarg.data)
+        args['inputs']          =load_input(str(form.inputs.data))
+        args['inputsarg']       =str(form.inputsarg.data)
+        args['pinputs']         =[]
         args['otherarg']        =str(form.otherarg.data)
         args['use_cuda']        =str(form.use_cuda.data)
         exp['arguments']=args
@@ -400,6 +410,9 @@ def test(pid=-1,expid=-1):
         form.inputs.data=(job['arguments']['pathinputs'])
         form.inputsarg.data=(job['arguments']['inputsarg'])
         form.otherarg.data=(job['arguments']['otherarg'])
+        form.outputs.data=(job['arguments']['outputs'])
+        form.outputsarg.data=(job['arguments']['outputsarg'])
+        
 
     return render_template('test.html', title='Add Test', form=form, pid=pid)
 
@@ -634,7 +647,7 @@ def down(pid):
     
     return redirect(url_for('home'))
 
-#details of the experiments- Needs modification in details.html for the test case
+#details of the experiments-OK
 @app.route("/experiment/details_done/<int:pid>")
 @app.route("/experiment/details_error/<int:pid>")
 @app.route("/experiment/details_run/<int:pid>")
@@ -690,10 +703,12 @@ def update_test(expid):
         args['experiment']      =str(form.experiment.data)
         args['model']           =str(form.model.data)
         args['modelarg']        =str(form.modelarg.data)
+        args['outputs']         =str(form.outputs.data)
+        args['outputsarg']      =str(form.outputsarg.data)
         args['pathinputs']      =str(form.inputs.data)
-        args['inputs']           =load_input(str(form.inputs.data))
-        args['inputsarg']        =str(form.inputsarg.data)
-        args['pinputs']          =[]
+        args['inputs']          =load_input(str(form.inputs.data))
+        args['inputsarg']       =str(form.inputsarg.data)
+        args['pinputs']         =[]
         args['otherarg']        =str(form.otherarg.data)
         args['use_cuda']        =str(form.use_cuda.data)
         exp['arguments']=args
@@ -733,6 +748,8 @@ def update_test(expid):
     form.experiment.data=(job['arguments']['experiment'])
     form.inputs.data=(job['arguments']['pathinputs'])
     form.inputsarg.data=(job['arguments']['inputsarg'])
+    form.outputs.data=(job['arguments']['outputs'])
+    form.outputsarg.data=(job['arguments']['outputsarg'])
     form.otherarg.data=(job['arguments']['otherarg'])
     form.use_cuda.process_data( int(job['arguments']['use_cuda']) )
     
