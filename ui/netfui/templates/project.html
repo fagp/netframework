@@ -14,6 +14,7 @@
               {{ form.name(class="form-control form-control-lg") }}
               </div>
           </div>
+
           <div class="form-group row">
              <div class="col-md-2">
               {{ form.path.label(class="form-control-label") }}
@@ -22,6 +23,7 @@
               {{ form.path(class="form-control form-control-lg") }}
               </div>
           </div>
+
           <div class="form-group row">
                 <div class="col-md-2">
               {{ form.exe.label(class="form-control-label") }}
@@ -30,6 +32,24 @@
               {{ form.exe(class="form-control form-control-lg") }}
             </div>
           </div>
+
+          <div class="form-group row">
+            <div class="col-md-2">
+             {{ form.test_path.label(class="form-control-label") }}
+           </div>
+             <div class="col-md-10">
+             {{ form.test_path(class="form-control form-control-lg") }}
+             </div>
+         </div>
+
+         <div class="form-group row">
+               <div class="col-md-2">
+             {{ form.test_exe.label(class="form-control-label") }}
+           </div>
+             <div class="col-md-10">
+             {{ form.test_exe(class="form-control form-control-lg") }}
+           </div>
+         </div>
           </fieldset>
           <div class="form-group">
               {{ form.submit(class="btn btn-outline-info") }}
@@ -47,9 +67,13 @@
         <h5 class="mb-1">Project name: {{ proj.name }}</h5>
       </div>
       <div class="d-flex w-100 justify-content-between">
-          <small>Project path: {{ proj.path }}</small>
-          <small>Project executable: {{ proj.exec }}</small>
+          <small>Train path: {{ proj.path }}</small>
+          <small>Train executable: {{ proj.exec }}</small>
       </div>
+      <div class="d-flex w-100 justify-content-between">
+        <small>Test path: {{ proj.test_path }}</small>
+        <small>Test executable: {{ proj.test_exec }}</small>
+    </div>
     </a>
     {% endfor %}
     </div>

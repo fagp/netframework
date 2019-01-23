@@ -127,7 +127,7 @@
           </a>
         </div>
       </div>
-      <a class="btn btn-danger btn-sm" href="{{url_for('rmqueued',pid=expid)}}">
+      <a class="btn btn-danger btn-sm" href="/experiment/remove_queue/{{ expid }}">
         <div><i class="fa fa-trash" style="font-size:1.5em;"></i></div>
         <div><small>remove</small></div>
       </a>
@@ -174,7 +174,7 @@
       <div><i class="fa fa-pencil-square-o" style="font-size:1.5em;"></i></div>
       <div><small>update</small></div>
     </a>
-    <a class="btn btn-danger btn-sm" href="{{url_for('rmerror',pid=expid)}}">
+    <a class="btn btn-danger btn-sm" href="/experiment/remove_error/{{ expid }}">
       <div><i class="fa fa-trash" style="font-size:1.5em;"></i></div>
       <div><small>remove</small></div>
     </a>
@@ -214,7 +214,7 @@
       <div><i class="fa fa-clone" style="font-size:1.5em;"></i></div>
       <div><small>clone</small></div>
     </a>
-    <a class="btn btn-danger btn-sm" href="{{url_for('rmdone',pid=expid)}}">
+    <a class="btn btn-danger btn-sm" href="/experiment/remove_done/{{ expid }}">
       <div><i class="fa fa-trash" style="font-size:1.5em;"></i></div>
       <div><small>remove</small></div>
     </a>

@@ -1,5 +1,5 @@
 from flask import render_template, url_for, request, redirect
-from netfui.forms import ProjectForm, TrainForm
+from netfui.forms import ProjectForm, TrainForm, TestForm
 from netfui import app, socketio
 from netfui.model_json import model
 import os, signal
@@ -248,6 +248,8 @@ def project():
         newproj['name']=form.name.data
         newproj['path']=form.path.data
         newproj['exec']=form.exe.data
+        newproj['test_path']=form.test_path.data
+        newproj['test_exec']=form.test_exe.data
         projects=projects_model.push_back(newproj)
         projects_model.save(projects)
 
@@ -262,22 +264,23 @@ def rmproject(pid):
     return redirect(url_for('project'))
 
 #add experiment-OK
-@app.route("/experiment", methods=['GET', 'POST'])
-@app.route("/experiment/<int:pid>", methods=['GET', 'POST'])
-@app.route("/experiment/clone_queue/<int:pid>/<int:expid>", methods=['GET', 'POST'])
-@app.route("/experiment/clone_queue/<int:expid>", methods=['GET', 'POST'])
-@app.route("/experiment/clone_run/<int:pid>/<int:expid>", methods=['GET', 'POST'])
-@app.route("/experiment/clone_run/<int:expid>", methods=['GET', 'POST'])
-@app.route("/experiment/clone_error/<int:pid>/<int:expid>", methods=['GET', 'POST'])
-@app.route("/experiment/clone_error/<int:expid>", methods=['GET', 'POST'])
-@app.route("/experiment/clone_done/<int:pid>/<int:expid>", methods=['GET', 'POST'])
-@app.route("/experiment/clone_done/<int:expid>", methods=['GET', 'POST'])
-def experiment(pid=-1,expid=-1):
+@app.route("/test", methods=['GET', 'POST'])
+@app.route("/test/<int:pid>", methods=['GET', 'POST'])
+@app.route("/test/clone_queue/<int:pid>/<int:expid>", methods=['GET', 'POST'])
+@app.route("/test/clone_queue/<int:expid>", methods=['GET', 'POST'])
+@app.route("/test/clone_run/<int:pid>/<int:expid>", methods=['GET', 'POST'])
+@app.route("/test/clone_run/<int:expid>", methods=['GET', 'POST'])
+@app.route("/test/clone_error/<int:pid>/<int:expid>", methods=['GET', 'POST'])
+@app.route("/test/clone_error/<int:expid>", methods=['GET', 'POST'])
+@app.route("/test/clone_done/<int:pid>/<int:expid>", methods=['GET', 'POST'])
+@app.route("/test/clone_done/<int:expid>", methods=['GET', 'POST'])
+def test(pid=-1,expid=-1):
     projects= projects_model.list_all()
     if len(list(projects.keys()))==0: #if there is no project redirect to project page
         return redirect(url_for('project'))
 
-    form=TrainForm()
+    form=TestForm()
+    
     first_project=False
     if pid==-1: #select first project
         pid=list(projects.keys())[0]
@@ -302,7 +305,98 @@ def experiment(pid=-1,expid=-1):
         exp['pid']=str(pid)
         exp['available']='True'
         exp['progress']='0'
-        now=datetime.datetime.now(); exp['date']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)
+        exp['test']='True'
+        now=datetime.datetime.now(); exp['date']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
+        args=dict()
+        args['experiment']      =str(form.experiment.data)
+        args['model']           =str(form.model.data)
+        args['modelarg']        =str(form.modelarg.data)
+        args['pathinputs']      =str(form.inputs.data)
+        args['inputs']           =load_input(str(form.inputs.data))
+        args['inputsarg']        =str(form.inputsarg.data)
+        args['pinputs']          =[]
+        args['otherarg']        =str(form.otherarg.data)
+        args['use_cuda']        =str(form.use_cuda.data)
+        exp['arguments']=args
+
+        jobs=experiments_model.push_back(exp)
+        experiments_model.save(jobs)
+        return redirect(url_for('start'))
+
+    for projid,proj in projects.items(): #populate project select
+        form.project.choices +=[( url_for('test', pid=projid), proj['name'])]
+        
+    form.project.process_data( url_for('test', pid=pid) )
+    
+    nets=load_net(projects,pid)
+    for netname,net in nets.items(): #populate model select according to selected project
+        choices =((netname+'/all', netname+':all'),)
+        for netepoch in net:
+            tup=(netname+'/'+netepoch, netname+':'+ netepoch.replace('model.t7',''))
+            choices += (tup,)
+        tup=(netname, choices)
+        form.model.choices += (tup,)
+
+    gpus=list_gpus()
+    form.use_cuda.choices += [(-1,'First Available')]
+    for gpu in gpus: #populate gpu select with available gpus
+        form.use_cuda.choices +=[(gpu['id'], gpu['name'])]
+    
+    if 'clone' in rule.rule:
+        if first_project:
+            form.model.process_data( (job['arguments']['model']) )
+        form.modelarg.process_data( (job['arguments']['modelarg']) )
+        form.inputs.data=(job['arguments']['inputs']+job['arguments']['pinput'])
+        form.inputsarg.data=(job['arguments']['inputsarg'])
+        args['pinputs']          =[]
+        form.otherarg.data=(job['arguments']['otherarg'])
+
+    return render_template('test.html', title='Add Test', form=form, pid=pid)
+
+#add experiment-OK
+@app.route("/experiment", methods=['GET', 'POST'])
+@app.route("/experiment/<int:pid>", methods=['GET', 'POST'])
+@app.route("/experiment/clone_queue/<int:pid>/<int:expid>", methods=['GET', 'POST'])
+@app.route("/experiment/clone_queue/<int:expid>", methods=['GET', 'POST'])
+@app.route("/experiment/clone_run/<int:pid>/<int:expid>", methods=['GET', 'POST'])
+@app.route("/experiment/clone_run/<int:expid>", methods=['GET', 'POST'])
+@app.route("/experiment/clone_error/<int:pid>/<int:expid>", methods=['GET', 'POST'])
+@app.route("/experiment/clone_error/<int:expid>", methods=['GET', 'POST'])
+@app.route("/experiment/clone_done/<int:pid>/<int:expid>", methods=['GET', 'POST'])
+@app.route("/experiment/clone_done/<int:expid>", methods=['GET', 'POST'])
+def experiment(pid=-1,expid=-1):
+    projects= projects_model.list_all()
+    if len(list(projects.keys()))==0: #if there is no project redirect to project page
+        return redirect(url_for('project'))
+
+    form=TrainForm()
+    
+    first_project=False
+    if pid==-1: #select first project
+        pid=list(projects.keys())[0]
+        first_project=True
+
+    rule = request.url_rule
+    if 'done' in rule.rule:
+        job=done_model[expid]
+    elif 'error' in rule.rule:
+        job=error_model[expid]
+    elif 'queue' in rule.rule:
+        job=experiments_model[expid]
+    elif 'run' in rule.rule:
+        job=started_model[expid]
+
+    if ('clone' in rule.rule) and (first_project):
+        pid=job['pid']
+
+    if request.method == 'POST':
+        exp=dict()
+        exp['user']=getpass.getuser()
+        exp['pid']=str(pid)
+        exp['available']='True'
+        exp['progress']='0'
+        exp['test']='False'
+        now=datetime.datetime.now(); exp['date']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
         args=dict()
         args['experiment']      =str(form.experiment.data)
         args['dataset']         =str(form.dataset.data)
@@ -375,7 +469,7 @@ def experiment(pid=-1,expid=-1):
         form.visdom.data=bool(job['arguments']['visdom']=='True')
         form.resume.data=bool(job['arguments']['resume']=='True')
     else:
-        form.optimizer.process_data( "Adam" ) #default Adam :)
+        form.optimizer.process_data( "Adam" ) #default optimizer Adam
         form.train_worker.data=0
         form.test_worker.data=0
         form.batch_size.data=1
@@ -416,27 +510,22 @@ def start_experiment(expid=-1):
     begin(expid)
     return redirect(url_for('home'))
     
-#remove queued-OK
-@app.route("/experiment/queue/remove/<int:pid>")
-def rmqueued(pid):
-    experiments=experiments_model.remove(pid)
-    experiments_model.save(experiments)
+#remove experiments-OK
+@app.route("/experiment/remove_queue/<int:pid>")
+@app.route("/experiment/remove_done/<int:pid>")
+@app.route("/experiment/remove_error/<int:pid>")
+def rm(pid):
 
-    return redirect(url_for('home'))
-
-#remove done-OK
-@app.route("/experiment/done/remove/<int:pid>")
-def rmdone(pid):
-    done=done_model.remove(pid)
-    done_model.save(done)
-
-    return redirect(url_for('home'))
-
-#remove erro-OK
-@app.route("/experiment/error/remove/<int:pid>")
-def rmerror(pid):
-    error=error_model.remove(pid)
-    error_model.save(error)
+    rule = request.url_rule
+    if 'done' in rule.rule:
+        job=done_model.remove(pid)
+        done_model.save(job)
+    elif 'error' in rule.rule:
+        job=error_model.remove(pid)
+        error_model.save(job)
+    elif 'queue' in rule.rule:
+        job=experiments_model.remove(pid)
+        experiments_model.save(job)
 
     return redirect(url_for('home'))
 
@@ -444,13 +533,14 @@ def rmerror(pid):
 @app.route("/experiment/kill/<int:pid>")
 def killstarted(pid):
     pid=str(pid)
+    
     global tokill
-    tokill[pid]=process[pid]
+    tokill[pid]=process[pid] #add process in kill list
     
     global exp_queue
-    exp_queue=True
+    exp_queue=False #stop queue processing
 
-    return redirect(url_for('toogle_queue'))
+    return redirect(url_for('start'))
 
 #enqueue failed job-OK
 @app.route("/experiment/enqueue/<int:pid>")
@@ -462,6 +552,7 @@ def enqueue(pid):
     
     return redirect(url_for('start'))
 
+#up experiment in queue-OK
 @app.route("/experiment/up/<int:pid>")
 def up(pid):
     pid=str(pid)
@@ -477,6 +568,7 @@ def up(pid):
     
     return redirect(url_for('home'))
 
+#down experiment in queue-OK
 @app.route("/experiment/down/<int:pid>")
 def down(pid):
     pid=str(pid)
@@ -484,14 +576,15 @@ def down(pid):
     ids=list(experiments.keys())
     current_ind=ids.index(pid)
     if current_ind<len(ids)-1:
-        before_pid=ids[current_ind+1]
+        after_pid=ids[current_ind+1]
         current_experiment=experiments[pid]
-        experiments[pid]=experiments[before_pid]
-        experiments[before_pid]=current_experiment
+        experiments[pid]=experiments[after_pid]
+        experiments[after_pid]=current_experiment
         experiments_model.save(experiments)
     
     return redirect(url_for('home'))
 
+#details of the experiments- Needs modification in details.html for the test case
 @app.route("/experiment/details_done/<int:pid>")
 @app.route("/experiment/details_error/<int:pid>")
 @app.route("/experiment/details_run/<int:pid>")
@@ -516,6 +609,7 @@ def details(pid):
     
     return render_template('details.html', title='Details',projects=projects,job=job,gpu=gpudict)
 
+#update experiments in queue and error-OK
 @app.route("/experiment/update_queue/<int:expid>", methods=['GET', 'POST'])
 @app.route("/experiment/update_error/<int:expid>", methods=['GET', 'POST'])
 def update(expid):

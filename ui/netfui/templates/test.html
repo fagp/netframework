@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="col-md-12">
+        <form method="POST" action="" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">Test Experiment</legend>
+                <div class="form-row align-items-center">
+                    <div class="col">{{ form.project.label() }}</div>
+                    <div class="col-3">{{ form.project(id="proj",class="custom-select") }}</div>
+                    <div class="col">{{ form.experiment.label(class="form-control-label") }}</div>
+                    <div class="col-7">{{ form.experiment(class="form-control form-control-lg") }}</div>
+                </div>
+
+                <div class="form-row align-items-center">
+                    <div class="col">{{ form.inputs.label(class="form-control-label") }}</div>
+                    <div class="col-3">{{ form.inputs(class="form-control form-control-lg") }}</div>
+                    <div class="col">{{ form.inputsarg.label(class="form-control-label") }}</div>
+                    <div class="col-7">{{ form.inputsarg(class="form-control form-control-lg") }}</div>
+                </div>
+
+                <div class="form-row align-items-center">
+                    <div class="col">{{ form.model.label() }}</div>
+                    <div class="col-3">{{ form.model(class="custom-select") }}</div>
+                    <div class="col">{{ form.modelarg.label(class="form-control-label") }}</div>
+                    <div class="col-7">{{ form.modelarg(class="form-control form-control-lg") }}</div>
+                </div>    
+                
+                <div class="form-row align-items-center">
+                    <div class="col">{{ form.use_cuda.label() }}</div>
+                    <div class="col-3">{{ form.use_cuda(class="custom-select") }}</div>
+                    <div class="col">{{ form.otherarg.label(class="form-control-label") }}</div>
+                    <div class="col-7">{{ form.otherarg(class="form-control form-control-lg") }}</div>
+                </div>
+            </fieldset>
+            <!-- Button -->
+            <div class="form-group">
+                {{ form.submit(class="btn btn-outline-info") }}
+            </div>
+        </form> 
+</div>
+{% endblock content %}
+
+
+{% block script %}
+    <script>
+        $('#proj').change(function () {
+            window.location = $(this).val();
+        });
+    </script>
+{% endblock script%}

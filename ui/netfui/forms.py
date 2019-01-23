@@ -1,5 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, BooleanField, SelectField, DecimalField, IntegerField
+from netfui.wtforms_extended_selectfield import ExtendedSelectField
 from flask_wtf.file import FileField, FileAllowed
 from wtforms.validators import DataRequired,NumberRange
 
@@ -32,10 +33,29 @@ class TrainForm(FlaskForm):
 
     submit = SubmitField('Add experiment')
 
+class TestForm(FlaskForm):
+    
+    project = SelectField('Project',choices=[])
+    experiment = StringField('Experiments',validators=[DataRequired()])
+
+    model = ExtendedSelectField('Model',choices=())
+    modelarg = StringField('Model argument name')
+    
+    inputs  = StringField('Input path')
+    inputsarg = StringField('Input argument name')
+
+    otherarg = StringField('Other arguments')
+    use_cuda = SelectField('GPU',choices=[])
+
+    submit = SubmitField('Add test experiment')
+
 class ProjectForm(FlaskForm):
     name = StringField('Project name:',validators=[DataRequired()])
-    path = StringField('Project path:',validators=[DataRequired()])
-    exe = StringField('Project executable:',validators=[DataRequired()])
+    path = StringField('Train path:',validators=[DataRequired()])
+    exe = StringField('Train executable:',validators=[DataRequired()])
+
+    test_path = StringField('Test path (Optional):')
+    test_exe = StringField('Test executable (Optional):')
 
     submit = SubmitField('Add project')
 

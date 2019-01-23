@@ -53,6 +53,28 @@ def list_loss(projects,pid):
     loss=json.load(open(loss_path))
     return list(loss.keys())
 
+def load_net(projects,pid):
+    prj=projects[str(pid)]
+    lfolder=''
+    folder_path=prj['path']
+    while lfolder=='':
+        folder_path,lfolder=os.path.split(folder_path)
+    net_path=os.path.join( folder_path, 'out' )
+
+    directories = sorted(os.listdir(net_path))
+    models = dict()
+    for folder in sorted(directories):
+        if not os.path.exists(net_path+'/'+folder+'/model'):
+            continue
+        list_files=sorted(os.listdir(net_path+'/'+folder+'/model'))
+        if list_files:
+            models[folder] = list_files
+    return models
+
+def load_input(input_path):
+    directories = os.listdir(input_path)
+    return directories
+
 def dict2str(arguments):
     argsstr=""
     for key,arg in arguments.items():
