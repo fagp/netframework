@@ -59,8 +59,10 @@ def show_error(pid,pr):
         except:
             pass
         time.sleep(0.01)
-    
-    del error_thread[pid]
+    try:
+        del error_thread[pid]
+    except:
+        pass
 
 def show_progress(pid,pr):
     global process
@@ -125,14 +127,28 @@ def begin(expid):
             now=datetime.datetime.now(); exp['sdate']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
             print('Log: Starting process ',exp['arguments']['experiment'])
             args=exp['arguments']
-            if args['resume']=='False':
+            if ('test' in list(exp.keys()) and exp['test']=='True'):
+                exp['log']='Errors:\n'
+                args['epochs']=len(args['inputs'])
+            
+            if 'resume' in list(args.keys()) and args['resume']=='False':
                 exp['log']='Errors:\n'
 
             prev_gpu=args['use_cuda']
             args['use_cuda']=str(use_cuda)
             current_proj=projects[exp['pid']]
             exp['progress']='0'
-            argsstr=dict2str(args)
+
+            if ('test' in list(exp.keys()) and exp['test']=='True'):
+                nets=load_net(projects,exp['pid'])
+                argsstr=dict2str_test(args,nets)
+                prexec=current_proj['test_exec']
+                prpath=current_proj['test_path']
+            else:
+                argsstr=dict2str(args)
+                prexec=current_proj['exec']
+                prpath=current_proj['path']
+
             exp['used_gpu']=args['use_cuda']
             args['use_cuda']=prev_gpu
             
@@ -141,17 +157,17 @@ def begin(expid):
             experiments=experiments_model.remove(expid)
             experiments_model.save(experiments)
 
-            
-
             global python_path
-            command='exec '+python_path+" -u "+current_proj['exec']+argsstr
+            
+            command='exec '+python_path+" -u "+prexec+argsstr
             global process
             print(command)
             slindex=started_model.last_index
-            process[slindex] = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE ,shell=True, cwd=current_proj['path'])
+            process[slindex] = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE ,shell=True, cwd=prpath)
 
-            progress_thread[slindex] = Thread(target=show_progress,args=(slindex,process[slindex]), daemon=True)
-            progress_thread[slindex].start()
+            if ('test' not in list(exp.keys()) or exp['test']=='False'):
+                progress_thread[slindex] = Thread(target=show_progress,args=(slindex,process[slindex]), daemon=True)
+                progress_thread[slindex].start()
 
             error_thread[slindex] = Thread(target=show_error,args=(slindex,process[slindex]), daemon=True)
             error_thread[slindex].start()
@@ -189,24 +205,59 @@ def watch_train():
                 if expid in list(process.keys()): #if process exist
                     pr=process[expid]
                     if pr.poll() is not None: #process ended
+                        finished=False
                         started=started_model.remove(expid)
                         started_model.save(started)
                         if pr.returncode==0: #job completed 
                             # print('p end well')
-                            now=datetime.datetime.now(); cstarted['ddate']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
-                            done=done_model.push_back(cstarted)
-                            done_model.save(done)
+                            if ('test' in list(cstarted.keys()) and cstarted['test']=='True' and len(cstarted['arguments']['inputs'])>1):
+                                last_input=cstarted['arguments']['inputs'].pop(0)
+                                cstarted['arguments']['pinputs']+=[last_input]
+                                args=cstarted['arguments']
+                                prev_gpu=args['use_cuda']
+                                args['use_cuda']=cstarted['used_gpu']
+                                projects=projects_model.list_all()
+                                current_proj=projects[cstarted['pid']]
+                                nets=load_net(projects,cstarted['pid'])
+                                argsstr=dict2str_test(args,nets)
+                                prexec=current_proj['test_exec']
+                                prpath=current_proj['test_path']
+                                cstarted['used_gpu']=args['use_cuda']
+                                args['use_cuda']=prev_gpu
+                                global python_path
+            
+                                command='exec '+python_path+" -u "+prexec+argsstr
+                                print(command)
+                                del process[expid] 
+                                cstarted['progress']= len(cstarted['arguments']['pinputs'])
+                                started=started_model.push_back(cstarted)
+                                started_model.save(started)
+                                slindex=started_model.last_index
+                                process[slindex] = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE ,shell=True, cwd=prpath)
+                                error_thread[slindex] = Thread(target=show_error,args=(slindex,process[slindex]), daemon=True)
+                                error_thread[slindex].start()
+                                socketio.emit('job complete')   
+
+                            else: #if training ends
+                                now=datetime.datetime.now(); cstarted['ddate']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
+                                done=done_model.push_back(cstarted)
+                                done_model.save(done)
+                                print('Log: Process complete ',cstarted['arguments']['experiment'])
+                                finished=True
+                            
+                            
                         else: #job error
                             # print('p end wrong')
                             error=error_model.push_back(cstarted)
                             error_model.save(error)
+                            print('Log: Error in process ',cstarted['arguments']['experiment'])
+                            finished=True
 
-                        used_gpus.remove(int(cstarted['used_gpu']))
-
-                        socketio.emit('job complete')     
-                        print('Log: Training complete ',cstarted['arguments']['experiment'])           
-                        del process[expid]    
-
+                        if finished:
+                            used_gpus.remove(int(cstarted['used_gpu']))  
+                            del process[expid] 
+                        socketio.emit('job complete')   
+                                   
             if exp_queue:   
                 begin(-1)
         except:
@@ -331,7 +382,7 @@ def test(pid=-1,expid=-1):
     nets=load_net(projects,pid)
     for netname,net in nets.items(): #populate model select according to selected project
         choices =((netname+'/all', netname+':all'),)
-        for netepoch in net:
+        for netepoch,_ in net.items():
             tup=(netname+'/'+netepoch, netname+':'+ netepoch.replace('model.t7',''))
             choices += (tup,)
         tup=(netname, choices)
@@ -346,9 +397,8 @@ def test(pid=-1,expid=-1):
         if first_project:
             form.model.process_data( (job['arguments']['model']) )
         form.modelarg.process_data( (job['arguments']['modelarg']) )
-        form.inputs.data=(job['arguments']['inputs']+job['arguments']['pinput'])
+        form.inputs.data=(job['arguments']['pathinputs'])
         form.inputsarg.data=(job['arguments']['inputsarg'])
-        args['pinputs']          =[]
         form.otherarg.data=(job['arguments']['otherarg'])
 
     return render_template('test.html', title='Add Test', form=form, pid=pid)
@@ -608,6 +658,85 @@ def details(pid):
     gpudict['-1']='First Available'
     
     return render_template('details.html', title='Details',projects=projects,job=job,gpu=gpudict)
+
+#update experiments in queue and error-OK
+@app.route("/test/update_queue/<int:expid>", methods=['GET', 'POST'])
+@app.route("/test/update_error/<int:expid>", methods=['GET', 'POST'])
+def update_test(expid):
+    projects= projects_model.list_all()
+    if len(list(projects.keys()))==0: #if there is no project redirect to project page
+        return redirect(url_for('project'))
+
+    form=TestForm()
+    rule = request.url_rule
+    
+    if 'error' in rule.rule:
+        job=error_model[expid]
+        error_model.disable(expid)
+    elif 'queue' in rule.rule:
+        job=experiments_model[expid]
+        experiments_model.disable(expid)
+    pid=job['pid']
+
+    if request.method == 'POST':
+        exp=dict()
+        exp['user']=getpass.getuser()
+        exp['pid']=str(pid)
+        exp['available']='True'
+        exp['progress']='0'
+        exp['test']='True'
+        now=datetime.datetime.now(); exp['date']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
+        args=dict()
+        args['experiment']      =str(form.experiment.data)
+        args['model']           =str(form.model.data)
+        args['modelarg']        =str(form.modelarg.data)
+        args['pathinputs']      =str(form.inputs.data)
+        args['inputs']           =load_input(str(form.inputs.data))
+        args['inputsarg']        =str(form.inputsarg.data)
+        args['pinputs']          =[]
+        args['otherarg']        =str(form.otherarg.data)
+        args['use_cuda']        =str(form.use_cuda.data)
+        exp['arguments']=args
+
+        if 'error' in rule.rule:
+            jobs=error_model.list_all()
+            jobs[expid]=exp
+            error_model.save(jobs)
+        elif 'queue' in rule.rule:
+            jobs=experiments_model.list_all()
+            jobs[expid]=exp
+            experiments_model.save(jobs)
+
+        return redirect(url_for('start'))
+
+    for projid,proj in projects.items(): #populate project select
+        form.project.choices +=[( url_for('test', pid=projid), proj['name'])]
+        
+    form.project.process_data( url_for('test', pid=pid) )
+    
+    nets=load_net(projects,pid)
+    for netname,net in nets.items(): #populate model select according to selected project
+        choices =((netname+'/all', netname+':all'),)
+        for netepoch in net:
+            tup=(netname+'/'+netepoch, netname+':'+ netepoch.replace('model.t7',''))
+            choices += (tup,)
+        tup=(netname, choices)
+        form.model.choices += (tup,)
+
+    gpus=list_gpus()
+    form.use_cuda.choices += [(-1,'First Available')]
+    for gpu in gpus: #populate gpu select with available gpus
+        form.use_cuda.choices +=[(gpu['id'], gpu['name'])]
+    
+    form.model.process_data( (job['arguments']['model']) )
+    form.modelarg.process_data( (job['arguments']['modelarg']) )
+    form.experiment.data=(job['arguments']['experiment'])
+    form.inputs.data=(job['arguments']['pathinputs'])
+    form.inputsarg.data=(job['arguments']['inputsarg'])
+    form.otherarg.data=(job['arguments']['otherarg'])
+    form.use_cuda.process_data( int(job['arguments']['use_cuda']) )
+    
+    return render_template('test.html', title='Update Test', form=form, pid=pid)
 
 #update experiments in queue and error-OK
 @app.route("/experiment/update_queue/<int:expid>", methods=['GET', 'POST'])

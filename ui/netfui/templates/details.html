@@ -9,15 +9,19 @@
   <form method="POST" action="">
     <legend class="border-bottom mb-4">{{ projects[job.pid].name }}: {{ job.arguments['experiment'] }}</legend>
     
-    {% if job['test'] %}
-
+    {% if job['test']=='True' %}
     <div class="row align-items-center">
-      <div class="col-md-6"><label class="form-control-label">Dataset: {{ job.arguments['dataset'] }}</label></div>
-      {% if job.arguments['datasetparam']=="" %}
-      <div class="col-md-6"><label class="form-control-label">Dataset Parameters: {}</label></div>
-      {% else %}
-      <div class="col-md-6"><label class="form-control-label">Dataset Parameters: {{ job.arguments['datasetparam'] }}</label></div>
-      {% endif %}
+      <div class="col-md-6"><label class="form-control-label">--{{ job.arguments['modelarg'] }}={{ job.arguments['model'] }}</label></div>
+      <div class="col-md-6"><label class="form-control-label">--{{ job.arguments['inputsarg'] }}={{ job.arguments['pathinputs'] }}</label></div>
+    </div>
+
+    <div class="row">
+        {% if job.arguments['otherarg']!="" %}
+        <div class="col-md-6"><label class="form-control-label">{{ job.arguments['otherarg'] }}</label></div>
+        {% endif %}
+    <div class="col-md-6"><label class="form-control-label">Files:</label>
+      <label class="form-control-label">{{ job.arguments['inputs'] }}</label>
+    </div>
     </div>
     
     {% else %}

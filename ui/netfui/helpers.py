@@ -68,7 +68,11 @@ def load_net(projects,pid):
             continue
         list_files=sorted(os.listdir(net_path+'/'+folder+'/model'))
         if list_files:
-            models[folder] = list_files
+            nets = dict()
+            for net in sorted(list_files):
+                nets[net]=net_path+'/'+folder+'/model/'+net
+            
+            models[folder] = nets
     return models
 
 def load_input(input_path):
@@ -87,4 +91,12 @@ def dict2str(arguments):
                     argsstr +=" --"+key+"=\""+arg+"\""
                 else:    
                     argsstr +=" --"+key+"="+arg
+    return argsstr
+
+def dict2str_test(arguments,nets):
+    key1,key2=arguments['model'].split('/')
+    argsstr =" --"+arguments['modelarg']+"="+nets[key1][key2]
+    argsstr+=" --"+arguments['inputsarg']+"="+os.path.join( arguments['pathinputs'], arguments['inputs'][0] )
+    argsstr+=" "+arguments['otherarg']
+    
     return argsstr
