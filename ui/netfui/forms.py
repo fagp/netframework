@@ -52,6 +52,25 @@ class TestForm(FlaskForm):
 
     submit = SubmitField('Add test experiment')
 
+# class MetricForm(FlaskForm):
+    
+#     project = SelectField('Project',choices=[])
+#     experiment = StringField('Experiments',validators=[DataRequired()])
+
+#     model = ExtendedSelectField('Model',choices=())
+#     modelarg = StringField('Model argument name')
+    
+#     inputs  = StringField('Input path')
+#     inputsarg = StringField('Input argument name')
+
+#     outputs  = StringField('Output path')
+#     outputsarg = StringField('Output argument name')
+
+#     otherarg = StringField('Other arguments')
+#     use_cuda = SelectField('GPU',choices=[])
+
+#     submit = SubmitField('Add test experiment')
+
 class ProjectForm(FlaskForm):
     name = StringField('Project name:',validators=[DataRequired()])
     path = StringField('Train path:',validators=[DataRequired()])
