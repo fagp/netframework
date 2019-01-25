@@ -55,23 +55,33 @@
       </div>
       <div class="d-flex w-100 justify-content-between">
           <small>Project: {{ projects[job.pid].name }}</small>
+          
           {% if job['test']=='True' %}
-          <small>{{ job.arguments['modelarg'] }}: {{ job.arguments['model'] }}</small>
-          <small>{{ job.arguments['inputsarg'] }}: {{ job.arguments['pathinputs'] }}</small>
-          <small>{{ job.arguments['otherarg'] }}</small>
+            <small>{{ job.arguments['inputsarg'] }}: {{ job.arguments['pathinputs'] }}</small>
+            {% if job['metric']=='False' %}
+              <small>{{ job.arguments['modelarg'] }}: {{ job.arguments['model'] }}</small>
+              <small>{{ job.arguments['outputsarg'] }}: {{ job.arguments['outputs'] }}</small>
+            {% else  %}
+              <small>{{ job.arguments['outputsarg'] }}: {{ job.arguments['pathoutputs'] }}</small>
+            {% endif %}
+            <small>{{ job.arguments['otherarg'] }}</small>
           {% else %}
-          <small>Dataset: {{ job.arguments['dataset'] }}</small>
-          <small>Model: {{ job.arguments['model'] }}</small>
-          <small>Loss: {{ job.arguments['loss'] }}</small>
-          <small>Optimizer: {{ job.arguments['optimizer'] }}</small>
-          <small>Epochs: {{ job.arguments['epochs'] }}</small>
-          <small>Batch Size: {{ job.arguments['batch_size'] }}</small>
+            <small>Dataset: {{ job.arguments['dataset'] }}</small>
+            <small>Model: {{ job.arguments['model'] }}</small>
+            <small>Loss: {{ job.arguments['loss'] }}</small>
+            <small>Optimizer: {{ job.arguments['optimizer'] }}</small>
+            <small>Epochs: {{ job.arguments['epochs'] }}</small>
+            <small>Batch Size: {{ job.arguments['batch_size'] }}</small>
           {% endif %}
           <small>User: {{ job.user }}</small>
       </div>
     </a>
     {% if job['test']=='True' %}
+    {% if job['metric']=='False' %}
     <a class="btn btn-success btn-sm" href="/test/clone_run/{{ expid }}">
+    {% else %}
+    <a class="btn btn-success btn-sm" href="/metric/clone_run/{{ expid }}">
+    {% endif %}
     {% else %}
     <a class="btn btn-success btn-sm" href="/experiment/clone_run/{{ expid }}">
     {% endif %}
@@ -108,23 +118,33 @@
         </div>
         <div class="d-flex w-100 justify-content-between">
             <small>Project: {{ projects[job.pid].name }}</small>
+            
             {% if job['test']=='True' %}
-            <small>{{ job.arguments['modelarg'] }}: {{ job.arguments['model'] }}</small>
-            <small>{{ job.arguments['inputsarg'] }}: {{ job.arguments['pathinputs'] }}</small>
+              <small>{{ job.arguments['inputsarg'] }}: {{ job.arguments['pathinputs'] }}</small>
+              {% if job['metric']=='False' %}
+                <small>{{ job.arguments['modelarg'] }}: {{ job.arguments['model'] }}</small>
+                <small>{{ job.arguments['outputsarg'] }}: {{ job.arguments['outputs'] }}</small>
+              {% else  %}
+                <small>{{ job.arguments['outputsarg'] }}: {{ job.arguments['pathoutputs'] }}</small>
+              {% endif %}
             <small>{{ job.arguments['otherarg'] }}</small>
             {% else %}
-            <small>Dataset: {{ job.arguments['dataset'] }}</small>
-            <small>Model: {{ job.arguments['model'] }}</small>
-            <small>Loss: {{ job.arguments['loss'] }}</small>
-            <small>Optimizer: {{ job.arguments['optimizer'] }}</small>
-            <small>Epochs: {{ job.arguments['epochs'] }}</small>
-            <small>Batch Size: {{ job.arguments['batch_size'] }}</small>
+              <small>Dataset: {{ job.arguments['dataset'] }}</small>
+              <small>Model: {{ job.arguments['model'] }}</small>
+              <small>Loss: {{ job.arguments['loss'] }}</small>
+              <small>Optimizer: {{ job.arguments['optimizer'] }}</small>
+              <small>Epochs: {{ job.arguments['epochs'] }}</small>
+              <small>Batch Size: {{ job.arguments['batch_size'] }}</small>
             {% endif %}
             <small>User: {{ job.user }}</small>
         </div>
       </a>
       {% if job['test']=='True' %}
+      {% if job['metric']=='False' %}
       <a class="btn btn-success btn-sm" href="/test/clone_queue/{{ expid }}">
+        {% else %}
+    <a class="btn btn-success btn-sm" href="/metric/clone_queue/{{ expid }}">
+    {% endif %}
       {% else %}
       <a class="btn btn-success btn-sm" href="/experiment/clone_queue/{{ expid }}">
       {% endif %}
@@ -132,7 +152,11 @@
         <div><small>clone</small></div>
       </a>
       {% if job['test']=='True' %}
+      {% if job['metric']=='False' %}
       <a class="btn btn-success btn-sm" href="/test/update_queue/{{ expid }}">
+        {% else %}
+        <a class="btn btn-success btn-sm" href="/metric/update_queue/{{ expid }}">
+        {% endif %}  
       {% else %}
       <a class="btn btn-success btn-sm" href="/experiment/update_queue/{{ expid }}">
       {% endif %}
@@ -178,16 +202,21 @@
         <div class="d-flex w-100 justify-content-between">
             <small>Project: {{ projects[job.pid].name }}</small>
             {% if job['test']=='True' %}
-            <small>{{ job.arguments['modelarg'] }}: {{ job.arguments['model'] }}</small>
-            <small>{{ job.arguments['inputsarg'] }}: {{ job.arguments['pathinputs'] }}</small>
-            <small>{{ job.arguments['otherarg'] }}</small>
+              <small>{{ job.arguments['inputsarg'] }}: {{ job.arguments['pathinputs'] }}</small>
+              {% if job['metric']=='False' %}
+                <small>{{ job.arguments['modelarg'] }}: {{ job.arguments['model'] }}</small>
+                <small>{{ job.arguments['outputsarg'] }}: {{ job.arguments['outputs'] }}</small>
+              {% else  %}
+                <small>{{ job.arguments['outputsarg'] }}: {{ job.arguments['pathoutputs'] }}</small>
+              {% endif %}
+              <small>{{ job.arguments['otherarg'] }}</small>
             {% else %}
-            <small>Dataset: {{ job.arguments['dataset'] }}</small>
-            <small>Model: {{ job.arguments['model'] }}</small>
-            <small>Loss: {{ job.arguments['loss'] }}</small>
-            <small>Optimizer: {{ job.arguments['optimizer'] }}</small>
-            <small>Epochs: {{ job.arguments['epochs'] }}</small>
-            <small>Batch Size: {{ job.arguments['batch_size'] }}</small>
+              <small>Dataset: {{ job.arguments['dataset'] }}</small>
+              <small>Model: {{ job.arguments['model'] }}</small>
+              <small>Loss: {{ job.arguments['loss'] }}</small>
+              <small>Optimizer: {{ job.arguments['optimizer'] }}</small>
+              <small>Epochs: {{ job.arguments['epochs'] }}</small>
+              <small>Batch Size: {{ job.arguments['batch_size'] }}</small>
             {% endif %}
             <small>User: {{ job.user }}</small>
         </div>
@@ -197,7 +226,11 @@
       <div><small>enqueue</small></div>
     </a>
     {% if job['test']=='True' %}
+    {% if job['metric']=='False' %}
     <a class="btn btn-success btn-sm" href="/test/clone_error/{{ expid }}">
+      {% else %}
+    <a class="btn btn-success btn-sm" href="/metric/clone_error/{{ expid }}">
+    {% endif %}
     {% else %}
     <a class="btn btn-success btn-sm" href="/experiment/clone_error/{{ expid }}">
     {% endif %}
@@ -205,7 +238,11 @@
       <div><small>clone</small></div>
     </a>
     {% if job['test']=='True' %}
+    {% if job['metric']=='False' %}
     <a class="btn btn-success btn-sm" href="/test/update_error/{{ expid }}">
+      {% else %}
+        <a class="btn btn-success btn-sm" href="/metric/update_error/{{ expid }}">
+        {% endif %}  
     {% else %}
     <a class="btn btn-success btn-sm" href="/experiment/update_error/{{ expid }}">
     {% endif %}
@@ -240,22 +277,35 @@
         <div class="d-flex w-100 justify-content-between">
             <small>Project: {{ projects[job.pid].name }}</small>
             {% if job['test']=='True' %}
-            <small>{{ job.arguments['modelarg'] }}: {{ job.arguments['model'] }}</small>
-            <small>{{ job.arguments['inputsarg'] }}: {{ job.arguments['pathinputs'] }}</small>
-            <small>{{ job.arguments['otherarg'] }}</small>
+              <small>{{ job.arguments['inputsarg'] }}: {{ job.arguments['pathinputs'] }}</small>
+              {% if job['metric']=='False' %}
+                <small>{{ job.arguments['modelarg'] }}: {{ job.arguments['model'] }}</small>
+                <small>{{ job.arguments['outputsarg'] }}: {{ job.arguments['outputs'] }}</small>
+              {% else  %}
+                <small>{{ job.arguments['outputsarg'] }}: {{ job.arguments['pathoutputs'] }}</small>
+              {% endif %}
+              <small>{{ job.arguments['otherarg'] }}</small>
             {% else %}
-            <small>Dataset: {{ job.arguments['dataset'] }}</small>
-            <small>Model: {{ job.arguments['model'] }}</small>
-            <small>Loss: {{ job.arguments['loss'] }}</small>
-            <small>Optimizer: {{ job.arguments['optimizer'] }}</small>
-            <small>Epochs: {{ job.arguments['epochs'] }}</small>
-            <small>Batch Size: {{ job.arguments['batch_size'] }}</small>
+              <small>Dataset: {{ job.arguments['dataset'] }}</small>
+              <small>Model: {{ job.arguments['model'] }}</small>
+              <small>Loss: {{ job.arguments['loss'] }}</small>
+              <small>Optimizer: {{ job.arguments['optimizer'] }}</small>
+              <small>Epochs: {{ job.arguments['epochs'] }}</small>
+              <small>Batch Size: {{ job.arguments['batch_size'] }}</small>
             {% endif %}
             <small>User: {{ job.user }}</small>
         </div>
     </a>
     {% if job['test']=='True' %}
+    {% if job['metric']=='False' %}
     <a class="btn btn-success btn-sm" href="/test/clone_done/{{ expid }}">
+      {% else %}
+      <a class="btn btn-success btn-sm" href="/metric/result/{{ expid }}">
+        <div><i class="fa fa-table" style="font-size:1.5em;"></i></div>
+        <div><small>result</small></div>
+      </a>
+    <a class="btn btn-success btn-sm" href="/metric/clone_done/{{ expid }}">
+    {% endif %}
     {% else %}
     <a class="btn btn-success btn-sm" href="/experiment/clone_done/{{ expid }}">
     {% endif %}

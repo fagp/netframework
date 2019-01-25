@@ -110,3 +110,23 @@ def dict2str_test(arguments,nets):
     argsstr+=" "+arguments['otherarg']
     
     return argsstr
+
+def best_match(input,outputs):
+    _,filename=os.path.split(input)
+    filename, file_extension = os.path.splitext(filename)
+    
+    out = [ x for x in outputs if x.find(filename)>0 ]
+    return out
+
+def dict2str_metric(arguments):
+
+    argsstr=" --"+arguments['outputsarg']+"="+arguments['outputs'][0]
+    filename, _ = os.path.splitext(arguments['outputs'][0])
+
+    out=best_match(filename,arguments['inputs'])
+    argsstr+=" --"+arguments['inputsarg']+"="+out[0]
+    filename, _ = os.path.splitext(arguments['inputs'][0])
+
+    argsstr+=" "+arguments['otherarg']
+    
+    return argsstr,out

@@ -30,6 +30,20 @@ class model():
             newid=0
         done[str(newid)]=obj  
         self.last_index=str(newid)
+        return done
+
+    def insert(self,id,obj):
+        done=self.list_all()
+        if str(id) not in list(done.keys()):
+            if len(list(done.keys()))>0:
+                newid=max([int(k) for k in list(done.keys())])+1
+            else:
+                newid=0
+        else:
+            newid=id
+
+        done[str(newid)]=obj  
+        self.last_index=str(newid)
         return done  
     
     def __getitem__(self,item):

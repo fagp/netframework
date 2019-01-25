@@ -1,5 +1,5 @@
 from flask import render_template, url_for, request, redirect
-from netfui.forms import ProjectForm, TrainForm, TestForm
+from netfui.forms import ProjectForm, TrainForm, TestForm, MetricForm
 from netfui import app, socketio
 from netfui.model_json import model
 import os, signal
@@ -91,6 +91,38 @@ def show_progress(pid,pr):
 
     del progress_thread[pid]
     
+def show_metric(pid,pr):
+    print('Log: Metric progress track')
+    global process
+    time.sleep(1)
+    while pid in list(process.keys()):
+        try:
+            #read std out
+            line = pr.stdout.readline()
+            if line.decode("utf-8").find(':') >=0:
+                started=started_model.list_all()
+                if line.decode("utf-8")=='end':
+                    break
+                epparse=line.decode("utf-8").split(':')
+                metric_name=epparse[0]
+                val=float(epparse[1])
+
+                if metric_name not in list(started[pid]['results'].keys()):
+                    started[pid]['results'][metric_name] =[]
+
+                started[pid]['results'][metric_name] += [val]
+                started_model.save(started)
+                socketio.emit('job complete') 
+
+        except:
+            pass
+        time.sleep(0.01)
+
+    try:
+        del progress_thread[pid]
+    except:
+        pass
+
 #begin process for experiment
 def begin(expid):
     expid=str(expid) #keys are strings, so cast!
@@ -142,11 +174,17 @@ def begin(expid):
             exp['progress']='0'
 
             if ('test' in list(exp.keys()) and exp['test']=='True'):
-                key1,key2=args['model'].split('/')
-                nets=load_net(projects,exp['pid'],key1)
-                argsstr=dict2str_test(args,nets)
-                prexec=current_proj['test_exec']
-                prpath=current_proj['test_path']
+                if (exp['metric']=='True'):
+                    argsstr,_=dict2str_metric(args)
+                    prexec=current_proj['metric_exec']
+                    prpath=current_proj['metric_path']
+                else:
+                    key1,key2=args['model'].split('/')
+                    nets=load_net(projects,exp['pid'],key1)
+                    argsstr=dict2str_test(args,nets)
+                    prexec=current_proj['test_exec']
+                    prpath=current_proj['test_path']
+                
             else:
                 argsstr=dict2str(args)
                 prexec=current_proj['exec']
@@ -174,6 +212,11 @@ def begin(expid):
 
             error_thread[slindex] = Thread(target=show_error,args=(slindex,process[slindex]), daemon=True)
             error_thread[slindex].start()
+
+            if (exp['metric']=='True'):
+                progress_thread[slindex] = Thread(target=show_metric,args=(slindex,process[slindex]), daemon=True)
+                progress_thread[slindex].start()
+
 
     
         del lock_exp[expid]
@@ -214,19 +257,31 @@ def watch_train():
                         started_model.save(started)
                         if pr.returncode==0: #job completed 
                             # print('p end well')
-                            if ('test' in list(cstarted.keys()) and cstarted['test']=='True' and len(cstarted['arguments']['inputs'])>1):
-                                last_input=cstarted['arguments']['inputs'].pop(0)
-                                cstarted['arguments']['pinputs']+=[last_input]
+                            if ('test' in list(cstarted.keys()) and cstarted['test']=='True' and ( ( cstarted['metric']=='True' and len(cstarted['arguments']['inputs'])>0) or (cstarted['metric']=='False' and len(cstarted['arguments']['inputs'])>1)  )      ): #if the process is test type and there are more inputs in the queue
+                                if cstarted['metric']=='False':
+                                    last_input=cstarted['arguments']['inputs'].pop(0)
+                                    cstarted['arguments']['pinputs']+=[last_input]
                                 args=cstarted['arguments']
                                 prev_gpu=args['use_cuda']
                                 args['use_cuda']=cstarted['used_gpu']
                                 projects=projects_model.list_all()
                                 current_proj=projects[cstarted['pid']]
-                                key1,key2=args['model'].split('/')
-                                nets=load_net(projects,cstarted['pid'],key1)
-                                argsstr=dict2str_test(args,nets)
-                                prexec=current_proj['test_exec']
-                                prpath=current_proj['test_path']
+
+                                if cstarted['metric']=='True':
+                                    argsstr,out=dict2str_metric(args)
+                                    last_input=cstarted['arguments']['outputs'].pop(0)
+                                    cstarted['arguments']['poutputs']+=[last_input]
+                                    cstarted['arguments']['inputs'].remove(out[0])
+                                    cstarted['arguments']['pinputs']+=out
+
+                                    prexec=current_proj['metric_exec']
+                                    prpath=current_proj['metric_path']
+                                else:
+                                    key1,key2=args['model'].split('/')
+                                    nets=load_net(projects,cstarted['pid'],key1)
+                                    argsstr=dict2str_test(args,nets)
+                                    prexec=current_proj['test_exec']
+                                    prpath=current_proj['test_path']
                                 cstarted['used_gpu']=args['use_cuda']
                                 args['use_cuda']=prev_gpu
                                 global python_path
@@ -241,10 +296,15 @@ def watch_train():
                                 process[slindex] = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE ,shell=True, cwd=prpath)
                                 error_thread[slindex] = Thread(target=show_error,args=(slindex,process[slindex]), daemon=True)
                                 error_thread[slindex].start()
+
+                                if cstarted['metric']=='True':
+                                    progress_thread[slindex] = Thread(target=show_metric,args=(slindex,process[slindex]), daemon=True)
+                                    progress_thread[slindex].start()
+
                                 socketio.emit('job complete')   
 
-                            else: #if training ends
-                                if ('test' in list(cstarted.keys()) and cstarted['test']=='True'):
+                            else: #if training ends or all test inputs in queue were processed
+                                if cstarted['test']=='True' and cstarted['metric']=='False':
                                     last_input=cstarted['arguments']['inputs'].pop(0)
                                     cstarted['arguments']['pinputs']+=[last_input]
                                 now=datetime.datetime.now(); cstarted['ddate']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
@@ -266,11 +326,11 @@ def watch_train():
                             del process[expid] 
                         socketio.emit('job complete')  
                                    
-            if exp_queue:   
-                begin(-1)
+            # if exp_queue:   
+            #     begin(-1)
         except:
             pass
-        time.sleep(0.01)
+        time.sleep(0.1)
 
 watch_thread = Thread(target=watch_train, daemon=True)
 watch_thread.start()
@@ -298,19 +358,47 @@ def home():
 
 #render project-OK
 @app.route("/project", methods=['GET', 'POST'])
-def project():
+@app.route("/project/<int:pid>", methods=['GET', 'POST'])
+def project(pid=-1):
+    pid=str(pid)
     projects=projects_model.list_all()
     form=ProjectForm()
 
     if request.method == 'POST':
-        newproj=dict()
+        if pid!='-1':
+            newproj=projects[pid]
+        else:
+            newproj=dict()
+
         newproj['name']=form.name.data
         newproj['path']=form.path.data
         newproj['exec']=form.exe.data
         newproj['test_path']=form.test_path.data
         newproj['test_exec']=form.test_exe.data
-        projects=projects_model.push_back(newproj)
-        projects_model.save(projects)
+        newproj['metric_path']=form.metric_path.data
+        newproj['metric_exec']=form.metric_exe.data
+        
+        if pid!='-1':
+            projects=projects_model.insert(pid,newproj)
+            projects_model.save(projects)
+        else:
+            projects=projects_model.push_back(newproj)
+            projects_model.save(projects)
+        
+        return redirect(url_for('project'))
+
+    if pid!='-1':
+        try:
+            newproj=projects[pid]
+            form.name.data = newproj['name']
+            form.path.data = newproj['path']      
+            form.exe.data = newproj['exec']    
+            form.test_path.data = newproj['test_path']
+            form.test_exe.data = newproj['test_exec'] 
+            form.metric_path.data = newproj['metric_path']
+            form.metric_exe.data = newproj['metric_exec']
+        except:
+            pass
 
     return render_template('project.html', title='Projects', projects=projects, form=form)
 
@@ -321,6 +409,93 @@ def rmproject(pid):
     projects_model.save(projects)
 
     return redirect(url_for('project'))
+
+#add experiment-OK
+@app.route("/metric", methods=['GET', 'POST'])
+@app.route("/metric/<int:pid>", methods=['GET', 'POST'])
+@app.route("/metric/clone_queue/<int:pid>/<int:expid>", methods=['GET', 'POST'])
+@app.route("/metric/clone_queue/<int:expid>", methods=['GET', 'POST'])
+@app.route("/metric/clone_run/<int:pid>/<int:expid>", methods=['GET', 'POST'])
+@app.route("/metric/clone_run/<int:expid>", methods=['GET', 'POST'])
+@app.route("/metric/clone_error/<int:pid>/<int:expid>", methods=['GET', 'POST'])
+@app.route("/metric/clone_error/<int:expid>", methods=['GET', 'POST'])
+@app.route("/metric/clone_done/<int:pid>/<int:expid>", methods=['GET', 'POST'])
+@app.route("/metric/clone_done/<int:expid>", methods=['GET', 'POST'])
+def metric(pid=-1,expid=-1):
+    projects= projects_model.list_all()
+    if len(list(projects.keys()))==0: #if there is no project redirect to project page
+        return redirect(url_for('project'))
+
+    form=MetricForm()
+    
+    first_project=False
+    if pid==-1: #select first project
+        pid=list(projects.keys())[0]
+        first_project=True
+
+    rule = request.url_rule
+    if 'done' in rule.rule:
+        job=done_model[expid]
+    elif 'error' in rule.rule:
+        job=error_model[expid]
+    elif 'queue' in rule.rule:
+        job=experiments_model[expid]
+    elif 'run' in rule.rule:
+        job=started_model[expid]
+
+    if ('clone' in rule.rule) and (first_project):
+        pid=job['pid']
+
+    if request.method == 'POST':
+        exp=dict()
+        exp['user']=getpass.getuser()
+        exp['pid']=str(pid)
+        exp['available']='True'
+        exp['progress']='0'
+        exp['test']='True'
+        exp['metric']='True'
+        exp['results']=dict()
+        now=datetime.datetime.now(); exp['date']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
+        args=dict()
+        args['experiment']      =str(form.experiment.data)
+        args['pathinputs']      =str(form.inputs.data)
+        args['pathoutputs']     =str(form.outputs.data)
+        args['outputs']          =load_input(str(form.outputs.data))
+        args['outputsarg']      =str(form.outputsarg.data)
+        args['inputs']          =load_input(str(form.inputs.data))
+        args['inputsarg']       =str(form.inputsarg.data)
+        args['pinputs']         =[]
+        args['poutputs']         =[]
+        args['otherarg']        =str(form.otherarg.data)
+        args['use_cuda']        =str(form.use_cuda.data)
+        exp['arguments']=args
+
+        if len(args['outputs'] )!=len(args['inputs']):
+            exp['available']='False'
+
+        jobs=experiments_model.push_back(exp)
+        experiments_model.save(jobs)
+        return redirect(url_for('start'))
+
+    for projid,proj in projects.items(): #populate project select
+        form.project.choices +=[( url_for('metric', pid=projid), proj['name'])]
+        
+    form.project.process_data( url_for('metric', pid=pid) )
+
+    gpus=list_gpus()
+    form.use_cuda.choices += [(-1,'First Available')]
+    for gpu in gpus: #populate gpu select with available gpus
+        form.use_cuda.choices +=[(gpu['id'], gpu['name'])]
+    
+    if 'clone' in rule.rule:
+        form.inputs.data=(job['arguments']['pathinputs'])
+        form.inputsarg.data=(job['arguments']['inputsarg'])
+        form.otherarg.data=(job['arguments']['otherarg'])
+        form.outputs.data=(job['arguments']['pathoutputs'])
+        form.outputsarg.data=(job['arguments']['outputsarg'])
+        
+
+    return render_template('metric.html', title='Add Metric', form=form, pid=pid)
 
 #add experiment-OK
 @app.route("/test", methods=['GET', 'POST'])
@@ -365,6 +540,7 @@ def test(pid=-1,expid=-1):
         exp['available']='True'
         exp['progress']='0'
         exp['test']='True'
+        exp['metric']='False'
         now=datetime.datetime.now(); exp['date']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
         args=dict()
         args['experiment']      =str(form.experiment.data)
@@ -459,6 +635,7 @@ def experiment(pid=-1,expid=-1):
         exp['available']='True'
         exp['progress']='0'
         exp['test']='False'
+        exp['metric']='False'
         now=datetime.datetime.now(); exp['date']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
         args=dict()
         args['experiment']      =str(form.experiment.data)
@@ -669,8 +846,113 @@ def details(pid):
     for gpu in gpus:
         gpudict[str(gpu['id'])]=gpu['name']
     gpudict['-1']='First Available'
-    
+
+    for key in ['inputs', 'pinputs', 'outputs', 'poutputs']:
+        if key in list(job['arguments'].keys()) and isinstance(job['arguments'][key],list):
+            l=min(11,len(job['arguments'][key]))
+            for i in range(l-1):
+                _,filename=os.path.split(job['arguments'][key][i])
+                job['arguments'][key][i]=filename
+                if i >11:
+                    break
+
     return render_template('details.html', title='Details',projects=projects,job=job,gpu=gpudict)
+
+@app.route("/metric/result/<int:pid>")
+def detailsmetrics(pid):
+    rule = request.url_rule
+    job=done_model[pid]
+    
+    projects=projects_model.list_all()
+
+    job['arguments']['index']=[]
+    for i in range(len(job['arguments']['pinputs'])):
+        _,filename=os.path.split(job['arguments']['pinputs'][i])
+        job['arguments']['pinputs'][i]=filename
+        _,filename=os.path.split(job['arguments']['poutputs'][i])
+        job['arguments']['poutputs'][i]=filename
+        job['arguments']['index']+=[i]
+    
+    
+    return render_template('details_metrics.html', title='Details',projects=projects,job=job)
+
+
+#update experiments in queue and error-OK
+@app.route("/metric/update_queue/<int:expid>", methods=['GET', 'POST'])
+@app.route("/metric/update_error/<int:expid>", methods=['GET', 'POST'])
+def update_metric(expid):
+    projects= projects_model.list_all()
+    if len(list(projects.keys()))==0: #if there is no project redirect to project page
+        return redirect(url_for('project'))
+
+    form=MetricForm()
+    rule = request.url_rule
+    
+    if 'error' in rule.rule:
+        job=error_model[expid]
+        error_model.disable(expid)
+    elif 'queue' in rule.rule:
+        job=experiments_model[expid]
+        experiments_model.disable(expid)
+    pid=job['pid']
+
+    if request.method == 'POST':
+        exp=dict()
+        exp['user']=getpass.getuser()
+        exp['pid']=str(pid)
+        exp['available']='True'
+        exp['progress']='0'
+        exp['test']='True'
+        exp['metric']='True'
+        exp['results']=dict()
+        now=datetime.datetime.now(); exp['date']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
+        args=dict()
+        args['experiment']      =str(form.experiment.data)
+        args['pathoutputs']      =str(form.outputs.data)
+        args['outputs']         =load_input(str(form.outputs.data))
+        args['outputsarg']      =str(form.outputsarg.data)
+        args['pathinputs']      =str(form.inputs.data)
+        args['inputs']          =load_input(str(form.inputs.data))
+        args['inputsarg']       =str(form.inputsarg.data)
+        args['pinputs']         =[]
+        args['poutputs']         =[]
+        args['otherarg']        =str(form.otherarg.data)
+        args['use_cuda']        =str(form.use_cuda.data)
+        exp['arguments']=args
+
+        if len(args['outputs'] )!=len(args['inputs']):
+            exp['available']='False'
+
+        if 'error' in rule.rule:
+            jobs=error_model.list_all()
+            jobs[expid]=exp
+            error_model.save(jobs)
+        elif 'queue' in rule.rule:
+            jobs=experiments_model.list_all()
+            jobs[expid]=exp
+            experiments_model.save(jobs)
+
+        return redirect(url_for('start'))
+
+    for projid,proj in projects.items(): #populate project select
+        form.project.choices +=[( url_for('metric', pid=projid), proj['name'])]
+        
+    form.project.process_data( url_for('metric', pid=pid) )
+
+    gpus=list_gpus()
+    form.use_cuda.choices += [(-1,'First Available')]
+    for gpu in gpus: #populate gpu select with available gpus
+        form.use_cuda.choices +=[(gpu['id'], gpu['name'])]
+    
+    form.experiment.data=(job['arguments']['experiment'])
+    form.inputs.data=(job['arguments']['pathinputs'])
+    form.inputsarg.data=(job['arguments']['inputsarg'])
+    form.outputs.data=(job['arguments']['pathoutputs'])
+    form.outputsarg.data=(job['arguments']['outputsarg'])
+    form.otherarg.data=(job['arguments']['otherarg'])
+    form.use_cuda.process_data( int(job['arguments']['use_cuda']) )
+    
+    return render_template('metric.html', title='Update Metric', form=form, pid=pid)
 
 #update experiments in queue and error-OK
 @app.route("/test/update_queue/<int:expid>", methods=['GET', 'POST'])
@@ -698,6 +980,7 @@ def update_test(expid):
         exp['available']='True'
         exp['progress']='0'
         exp['test']='True'
+        exp['metric']='False'
         now=datetime.datetime.now(); exp['date']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
         args=dict()
         args['experiment']      =str(form.experiment.data)
@@ -779,6 +1062,8 @@ def update(expid):
         exp['pid']=str(pid)
         exp['available']='True'
         exp['progress']=job['progress']
+        exp['test']='False'
+        exp['metric']='False'
         now=datetime.datetime.now(); exp['date']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)
         args=dict()
         args['experiment']      =str(form.experiment.data)

@@ -50,6 +50,24 @@
              {{ form.test_exe(class="form-control form-control-lg") }}
            </div>
          </div>
+
+         <div class="form-group row">
+          <div class="col-md-2">
+           {{ form.metric_path.label(class="form-control-label") }}
+         </div>
+           <div class="col-md-10">
+           {{ form.metric_path(class="form-control form-control-lg") }}
+           </div>
+       </div>
+
+       <div class="form-group row">
+             <div class="col-md-2">
+           {{ form.metric_exe.label(class="form-control-label") }}
+         </div>
+           <div class="col-md-10">
+           {{ form.metric_exe(class="form-control form-control-lg") }}
+         </div>
+       </div>
           </fieldset>
           <div class="form-group">
               {{ form.submit(class="btn btn-outline-info") }}
@@ -62,7 +80,8 @@
 <div class="col-md-6" style="position: absolute;top: 2px; bottom: 2px; right: 0px;">
     <div class="list-group">
     {% for pid,proj in projects.items() %}
-    <a href="{{ url_for('rmproject',pid=pid) }}" class="list-group-item list-group-item-action flex-column align-items-start">
+    <div class="btn-group">
+    <a href="{{ url_for('project',pid=pid) }}" class="list-group-item list-group-item-action flex-column align-items-start">
       <div class="d-flex w-100 justify-content-between">
         <h5 class="mb-1">Project name: {{ proj.name }}</h5>
       </div>
@@ -70,11 +89,24 @@
           <small>Train path: {{ proj.path }}</small>
           <small>Train executable: {{ proj.exec }}</small>
       </div>
+      {% if proj.test_exec!='' %}
       <div class="d-flex w-100 justify-content-between">
         <small>Test path: {{ proj.test_path }}</small>
         <small>Test executable: {{ proj.test_exec }}</small>
     </div>
+    {% endif %}
+    {% if proj.metric_exec!='' %}
+    <div class="d-flex w-100 justify-content-between">
+      <small>Metric path: {{ proj.metric_path }}</small>
+      <small>Metric executable: {{ proj.metric_exec }}</small>
+    </div>
+    {% endif %}
     </a>
+    <a class="btn btn-danger btn-sm" href="/project/remove/{{ pid }}">
+      <div><i class="fa fa-trash" style="font-size:1.5em;"></i></div>
+      <div><small>remove</small></div>
+    </a>
+  </div>
     {% endfor %}
     </div>
 </div>

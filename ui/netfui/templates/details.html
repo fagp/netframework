@@ -11,7 +11,9 @@
     
     {% if job['test']=='True' %}
     <div class="row align-items-center">
+      {% if job['metric']=='False' %}
       <div class="col-md-6"><label class="form-control-label">--{{ job.arguments['modelarg'] }}={{ job.arguments['model'] }}</label></div>
+      {% endif %}
       <div class="col-md-6"><label class="form-control-label">--{{ job.arguments['inputsarg'] }}={{ job.arguments['pathinputs'] }}</label></div>
     </div>
 
@@ -19,17 +21,32 @@
       {% if job.arguments['otherarg']!="" %}
       <div class="col-md-6"><label class="form-control-label">{{ job.arguments['otherarg'] }}</label></div>
       {% endif %}
+      {% if job['metric']=='False' %}
       <div class="col-md-6"><label class="form-control-label">--{{ job.arguments['outputsarg'] }}={{ job.arguments['outputs'] }}</label></div>
+      {% else %}
+      <div class="col-md-6"><label class="form-control-label">--{{ job.arguments['outputsarg'] }}={{ job.arguments['pathoutputs'] }}</label></div>
+      {% endif %}
     </div>
 
     <div class="row">
-    <div class="col-md-6"><label class="form-control-label">Files in processed:</label>
+    <div class="col-md-6"><label class="form-control-label">Inputs processed:</label>
       <label class="form-control-label">{{ job.arguments['pinputs'][:10] }}...</label>
     </div>
-    <div class="col-md-6"><label class="form-control-label">Files in queue:</label>
+    <div class="col-md-6"><label class="form-control-label">Inputs in queue:</label>
       <label class="form-control-label">{{ job.arguments['inputs'][:10] }}...</label>
     </div>
     </div>
+
+    {% if job['metric']=='True' %}
+    <div class="row">
+        <div class="col-md-6"><label class="form-control-label">Targets processed:</label>
+          <label class="form-control-label">{{ job.arguments['pinputs'][:10] }}...</label>
+        </div>
+        <div class="col-md-6"><label class="form-control-label">Targets in queue:</label>
+          <label class="form-control-label">{{ job.arguments['inputs'][:10] }}...</label>
+        </div>
+        </div>
+    {% endif %}
     
     {% else %}
 

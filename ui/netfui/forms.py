@@ -52,24 +52,21 @@ class TestForm(FlaskForm):
 
     submit = SubmitField('Add test experiment')
 
-# class MetricForm(FlaskForm):
+class MetricForm(FlaskForm):
     
-#     project = SelectField('Project',choices=[])
-#     experiment = StringField('Experiments',validators=[DataRequired()])
-
-#     model = ExtendedSelectField('Model',choices=())
-#     modelarg = StringField('Model argument name')
+    project = SelectField('Project',choices=[])
+    experiment = StringField('Experiments',validators=[DataRequired()])
     
-#     inputs  = StringField('Input path')
-#     inputsarg = StringField('Input argument name')
+    inputs  = StringField('Input path')
+    inputsarg = StringField('Input argument name')
 
-#     outputs  = StringField('Output path')
-#     outputsarg = StringField('Output argument name')
+    outputs  = StringField('Target path')
+    outputsarg = StringField('Target argument name')
 
-#     otherarg = StringField('Other arguments')
-#     use_cuda = SelectField('GPU',choices=[])
+    otherarg = StringField('Other arguments')
+    use_cuda = SelectField('GPU',choices=[])
 
-#     submit = SubmitField('Add test experiment')
+    submit = SubmitField('Add test experiment')
 
 class ProjectForm(FlaskForm):
     name = StringField('Project name:',validators=[DataRequired()])
@@ -78,6 +75,9 @@ class ProjectForm(FlaskForm):
 
     test_path = StringField('Test path (Optional):')
     test_exe = StringField('Test executable (Optional):')
+
+    metric_path = StringField('Metric path (Optional):')
+    metric_exe = StringField('Metric executable (Optional):')
 
     submit = SubmitField('Add project')
 
