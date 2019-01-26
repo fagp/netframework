@@ -298,6 +298,10 @@
     </a>
     {% if job['test']=='True' %}
     {% if job['metric']=='False' %}
+    <a class="btn btn-success btn-sm" href="/test/metric/{{ expid }}">
+      <div><i class="fa fa-balance-scale" style="font-size:1.5em;"></i></div>
+      <div><small>test</small></div>
+    </a>
     <a class="btn btn-success btn-sm" href="/test/clone_done/{{ expid }}">
       {% else %}
       <a class="btn btn-success btn-sm" href="/metric/result/{{ expid }}">
@@ -307,6 +311,10 @@
     <a class="btn btn-success btn-sm" href="/metric/clone_done/{{ expid }}">
     {% endif %}
     {% else %}
+    <a class="btn btn-success btn-sm" href="/experiment/test/{{ expid }}">
+      <div><i class="fa fa-cube" style="font-size:1.5em;"></i></div>
+      <div><small>test</small></div>
+    </a>
     <a class="btn btn-success btn-sm" href="/experiment/clone_done/{{ expid }}">
     {% endif %}
       <div><i class="fa fa-clone" style="font-size:1.5em;"></i></div>

@@ -954,6 +954,38 @@ def update_metric(expid):
     
     return render_template('metric.html', title='Update Metric', form=form, pid=pid)
 
+@app.route("/test/metric/<int:expid>")
+def create_metric(expid):
+
+    job=done_model[expid]
+
+    exp=dict()
+    exp['user']=getpass.getuser()
+    exp['pid']=job['pid']
+    exp['available']='False'
+    exp['progress']='0'
+    exp['test']='True'
+    exp['metric']='True'
+    now=datetime.datetime.now(); exp['date']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
+    args=dict()
+    args['experiment']      =job['arguments']['experiment']+'_metric'
+    args['pathoutputs']     =''
+    args['outputs']         =''
+    args['outputsarg']      =''
+    args['pathinputs']      =job['arguments']['outputs']
+    args['inputs']          =''
+    args['inputsarg']       =''
+    args['pinputs']         =[]
+    args['poutputs']         =[]
+    args['otherarg']        =''
+    args['use_cuda']        =str(-1)
+    exp['arguments']=args
+
+    jobs=experiments_model.push_back(exp)
+    experiments_model.save(jobs)
+
+    return redirect('/metric/update_queue/'+str(experiments_model.last_index))
+
 #update experiments in queue and error-OK
 @app.route("/test/update_queue/<int:expid>", methods=['GET', 'POST'])
 @app.route("/test/update_error/<int:expid>", methods=['GET', 'POST'])
@@ -1037,6 +1069,40 @@ def update_test(expid):
     form.use_cuda.process_data( int(job['arguments']['use_cuda']) )
     
     return render_template('test.html', title='Update Test', form=form, pid=pid)
+
+@app.route("/experiment/test/<int:expid>")
+def create_test(expid):
+
+    job=done_model[expid]
+
+    exp=dict()
+    exp['user']=getpass.getuser()
+    exp['pid']=job['pid']
+    exp['available']='False'
+    exp['progress']='0'
+    exp['test']='True'
+    exp['metric']='False'
+    now=datetime.datetime.now(); exp['date']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
+    args=dict()
+    args['experiment']      =job['arguments']['experiment']+'_test'
+    args['model']           =job['arguments']['experiment']+'/lastmodel.t7'
+    args['modelarg']        =''
+    args['outputs']         =''
+    args['outputsarg']      =''
+    args['pathinputs']      =''
+    args['inputs']          =''
+    args['inputsarg']       =''
+    args['pinputs']         =[]
+    args['otherarg']        =''
+    args['use_cuda']        =str(-1)
+    exp['arguments']=args
+
+    jobs=experiments_model.push_back(exp)
+    experiments_model.save(jobs)
+
+    return redirect('/test/update_queue/'+str(experiments_model.last_index))
+
+
 
 #update experiments in queue and error-OK
 @app.route("/experiment/update_queue/<int:expid>", methods=['GET', 'POST'])
