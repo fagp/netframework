@@ -339,6 +339,11 @@ watch_thread.start()
 @app.route("/")
 @app.route("/home")
 def home():
+
+    gpus=list_gpus()
+    if not gpus:
+        return render_template('error.html', errortitle='No GPU found!',error="It seems that you do not have a Nvidia GPU. \n Only GPU schedule is allowed... for now" )
+
     error=error_model.list_all()
     jobs=experiments_model.list_all()
     projects=projects_model.list_all()

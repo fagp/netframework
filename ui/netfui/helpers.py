@@ -2,6 +2,7 @@ import os
 import json
 import subprocess
 import glob
+from flask import render_template, url_for, request, redirect
 
 used_gpus=list()
 touse_gpus=dict()
@@ -11,16 +12,22 @@ def list_gpus():
     (out, _) = p.communicate()
     gpusstr=str(out.decode("utf-8")).split('\n')
     gpus = list()
-    for gstr in gpusstr:
-        if gstr!='':
-            attr=gstr.split(',')
-            gpu={'id':int(attr[0]),'name':attr[3][1:],'total':int(attr[1][1:]),'used':int(attr[2][1:])}
-            gpus+= [gpu]
+    try:
+        for gstr in gpusstr:
+            if gstr!='':
+                attr=gstr.split(',')
+                gpu={'id':int(attr[0]),'name':attr[3][1:],'total':int(attr[1][1:]),'used':int(attr[2][1:])}
+                gpus+= [gpu]
+    except:
+        gpus= list()
             
     return gpus
 
 for gpu in list_gpus():
-    touse_gpus[str(gpu['id'])+':'+gpu['name']]=True
+    try :
+        touse_gpus[str(gpu['id'])+':'+gpu['name']]=True
+    except:
+        touse_gpus=[]
 
 def available_gpus():
     gpus=list_gpus()
