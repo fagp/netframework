@@ -117,6 +117,7 @@ def dict2str_test(arguments,nets):
         os.mkdir(os.path.join(arguments['outputs'],arguments['experiment'] ))
     argsstr+=" --"+arguments['outputsarg']+"="+os.path.join( arguments['outputs'],arguments['experiment'], filename )
     argsstr+=" "+arguments['otherarg']
+    argsstr+=" --use_cuda="+str(arguments['use_cuda'])
     
     return argsstr
 
