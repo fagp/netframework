@@ -90,7 +90,10 @@ def show_progress(pid,pr):
             pass
         time.sleep(0.01)
 
-    del progress_thread[pid]
+    try:
+        del progress_thread[pid]
+    except:
+        pass
     
 def show_metric(pid,pr):
     print('Log: Metric progress track')
