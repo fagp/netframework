@@ -13,6 +13,7 @@ from netfui.helpers import *
 import time
 from queue import Queue, Empty
 import select
+import numpy as np
 
 #models-OK
 done_model = model(app.config['paths']['done_path'])
@@ -877,9 +878,13 @@ def detailsmetrics(pid):
         _,filename=os.path.split(job['arguments']['poutputs'][i])
         job['arguments']['poutputs'][i]=filename
         job['arguments']['index']+=[i]
+
+    means=dict()
+    for metric, vals in job['results'].items():
+        means[metric]= np.mean(np.array(vals))
     
     
-    return render_template('details_metrics.html', title='Details',projects=projects,job=job)
+    return render_template('details_metrics.html', title='Details',projects=projects,job=job, means=means)
 
 
 #update experiments in queue and error-OK
@@ -977,7 +982,7 @@ def create_metric(expid):
     args['pathoutputs']     =''
     args['outputs']         =''
     args['outputsarg']      =''
-    args['pathinputs']      =job['arguments']['outputs']
+    args['pathinputs']      =os.path.join(job['arguments']['outputs'],job['arguments']['experiment'])
     args['inputs']          =''
     args['inputsarg']       =''
     args['pinputs']         =[]

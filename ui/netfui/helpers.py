@@ -113,7 +113,9 @@ def dict2str_test(arguments,nets):
     argsstr+=" --"+arguments['inputsarg']+"="+arguments['inputs'][0]
     filename, _ = os.path.splitext(arguments['inputs'][0])
     _,filename=os.path.split(filename)
-    argsstr+=" --"+arguments['outputsarg']+"="+os.path.join( arguments['outputs'], filename )
+    if not os.path.exists(os.path.join(arguments['outputs'],arguments['experiment'] )):
+        os.mkdir(os.path.join(arguments['outputs'],arguments['experiment'] ))
+    argsstr+=" --"+arguments['outputsarg']+"="+os.path.join( arguments['outputs'],arguments['experiment'], filename )
     argsstr+=" "+arguments['otherarg']
     
     return argsstr

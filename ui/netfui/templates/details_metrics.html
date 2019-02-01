@@ -22,6 +22,14 @@
         </thead>
         
         <tbody>
+            <tr>
+                <th scope="col"></th>
+                <td></td>
+                <td>Mean</td>
+                {% for metric in means.keys() %}
+                <td>{{ means[metric] }}</td>
+                {% endfor %}
+          </tr>
           {% for i in job.arguments['index'] %}
           <tr>
               <th scope="col">{{ i }}</th>
