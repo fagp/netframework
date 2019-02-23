@@ -353,7 +353,7 @@ class NetFramework():
 
     def savemodel(self,modelpath='',killsignal=None):
         if modelpath=='' or killsignal is not None:
-            print('Saving checkpoint epoch {}\n'.format(current_epoch))
+            print('Saving checkpoint epoch {}\n'.format(self.current_epoch))
             modelpath=os.path.join(self.folders['model_path'],'epoch{}model.t7'.format(self.current_epoch))
         to_save= self.net.module if self.use_parallel else self.net
         state = {
