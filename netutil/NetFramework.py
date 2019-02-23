@@ -52,7 +52,7 @@ class NetFramework():
         parser.add_argument('--optimizer', nargs='?', type=str, default='RMSprop', help='Optimizer to use')
         parser.add_argument('--optimizerparam', type=str, default='{}', help='Experiment optimizer parameters')
         parser.add_argument('--lrschedule', nargs='?', type=str, default='none', help='LR Schedule to use')
-        parser.add_argument('--loss', nargs='?', type=str, default='ce', help='Loss function to use')
+        parser.add_argument('--loss', nargs='?', type=str, default='', help='Loss function to use')
         parser.add_argument('--lossparam', type=str, default='{}', help='Loss function parameters')
         parser.add_argument('--resume', action='store_true', help='Resume training')
 
@@ -351,8 +351,9 @@ class NetFramework():
         return 1
 
 
-    def savemodel(self,modelpath=''):
-        if modelpath=='':
+    def savemodel(self,modelpath='',killsignal=None):
+        if modelpath=='' or killsignal is not None:
+            print('Saving checkpoint epoch {}\n'.format(current_epoch))
             modelpath=os.path.join(self.folders['model_path'],'epoch{}model.t7'.format(self.current_epoch))
         to_save= self.net.module if self.use_parallel else self.net
         state = {

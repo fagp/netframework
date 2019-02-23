@@ -26,6 +26,8 @@ def get_metric_path(config_file='defaults/metrics.json'):
 
 def get_loss_path(name, config_file='defaults/loss_definition.json'):
     loss_func = json.load(open(config_file),cls=Decoder)
+    if name=='':
+        name=list(loss_func.keys())[0]
     if name not in loss_func:
         raise 'Function '+name+' not found in '+config_file
     return loss_func[name]
