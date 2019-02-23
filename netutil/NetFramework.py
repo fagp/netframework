@@ -1,6 +1,7 @@
 # import gc
 import os
 # import sys
+import json
 import time
 # import torch
 # import random
@@ -68,24 +69,26 @@ class NetFramework():
             np.random.seed(args.seed)
             random.seed(args.seed)
 
-        args.lossparam=json.loads(args.lossparam.replace("'","\""),cls=Decoder)
-        args.datasetparam=json.loads(args.datasetparam.replace("'","\""),cls=Decoder)
-        args.modelparam=json.loads(args.modelparam.replace("'","\""),cls=Decoder)
-        args.optimizerparam=json.loads(args.optimizerparam.replace("'","\""),cls=Decoder)
-
         # create outputs folders
         root='../out'
         experimentpath=(os.path.join(root,args.experiment))
-        args.folders={ 'root_path':root, 'experiment_path':experimentpath, 'model_path':os.path.join(experimentpath,'model'), 'images_path':os.path.join(experimentpath,'images') }
+        folders={ 'root_path':root, 'experiment_path':experimentpath, 'model_path':os.path.join(experimentpath,'model'), 'images_path':os.path.join(experimentpath,'images') }
 
         for i in range(2):
-            for folder, path in args.folders.items():
+            for folder, path in folders.items():
                 if not os.path.isdir(path):
                     try:
                         os.mkdir(path)  
                     except:
                         pass
 
+        json.dump(args,open(os.path.join(experimentpath,'args.json'),'w'))
+        args.folders=folders
+
+        args.lossparam=json.loads(args.lossparam.replace("'","\""),cls=Decoder)
+        args.datasetparam=json.loads(args.datasetparam.replace("'","\""),cls=Decoder)
+        args.modelparam=json.loads(args.modelparam.replace("'","\""),cls=Decoder)
+        args.optimizerparam=json.loads(args.optimizerparam.replace("'","\""),cls=Decoder)
 
         # Parse use cuda
         self.device, self.use_parallel = parse_cuda(args)
