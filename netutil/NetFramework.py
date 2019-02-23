@@ -24,10 +24,17 @@ from ..loss.selectloss import get_metric_path
 from ..dataloaders.loaddataset import loaddataset
 from ..optimizers.selectopt import selectoptimizer
 from ..optimizers.selectschedule import selectschedule
+import warnings
+import random
 
+warnings.filterwarnings("ignore")
 
 class NetFramework():
     def __init__(self, defaults_path):
+
+        torch.manual_seed(123)
+        np.random.seed(123)
+        random.seed(123)
 
         parser = argparse.ArgumentParser(description='Net framework arguments description')
         parser.add_argument('--experiment', nargs='?', type=str, default='experiment', help='Experiment name')
@@ -168,6 +175,7 @@ class NetFramework():
             self.resume()
         
         signal.signal(signal.SIGTERM, self.savemodel)
+        self.args=args
 
     def do_train(self):
         for current_epoch in range(self.init_epoch,self.epochs):
@@ -373,10 +381,13 @@ class NetFramework():
 
         for tag, value in metrics_dict.items():
             np.savetxt(self.folders['experiment_path']+'/'+tag+'.txt', np.array(value.array) , delimiter=',', fmt='%3.6f') 
+        
+        if killsignal is not None:
+            exit(-1)
     
     def loadmodel(self,modelpath):
         if os.path.isfile(modelpath):
-            checkpoint = torch.load(modelpath)
+            checkpoint = torch.load(modelpath,map_location='cpu')
             to_load= self.net.module if self.use_parallel else self.net
             to_load.load_state_dict(checkpoint['net'])
             self.optimizer.load_state_dict(checkpoint['optimizer'])
@@ -411,4 +422,5 @@ class NetFramework():
             if files:
                 self.init_epoch = max([int(f[5:f.find('model.t7')]) for f in files])+1
                 self.loadmodel(os.path.join(self.folders['model_path'], 'epoch'+str(self.init_epoch-1)+'model.t7' ))
+                print('Resuming on epoch'+str(self.init_epoch-1))
 

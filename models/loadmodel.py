@@ -16,7 +16,7 @@ def loadmodel(modelname,experimentparams,config_file='defaults/modelconfig.json'
     model_props.pop('module',None)
 
     if 'init' in model_props.keys():
-        init_type=module=model_props['init']
+        init_type=model_props['init']
         model_props.pop('init',None)
     else:
         init_type='xavier_normal'
@@ -57,7 +57,7 @@ def init_params(net,init_type):
                 if m.bias is not None:
                     init.constant_(m.bias, 0)
     elif os.path.exists(init_type):
-        checkpoint = torch.load(init_type)
+        checkpoint = torch.load(init_type,map_location='cpu')
         net.load_state_dict(checkpoint['net'])
     else:
         raise 'Initialization type ' +init_type+ ' not found'
