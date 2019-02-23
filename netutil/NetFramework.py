@@ -4,6 +4,7 @@ import os
 import time
 # import torch
 # import random
+import signal
 import argparse
 # import numpy as np
 # import torch.nn as nn
@@ -165,6 +166,8 @@ class NetFramework():
 
         if args.resume:
             self.resume()
+        
+        signal.signal(signal.SIGTERM, self.savemodel)
 
     def do_train(self):
         for current_epoch in range(self.init_epoch,self.epochs):
@@ -348,7 +351,9 @@ class NetFramework():
         return 1
 
 
-    def savemodel(self,modelpath):
+    def savemodel(self,modelpath=''):
+        if modelpath=='':
+            modelpath=os.path.join(self.folders['model_path'],'epoch{}model.t7'.format(self.current_epoch))
         to_save= self.net.module if self.use_parallel else self.net
         state = {
                 'epoch': self.current_epoch,

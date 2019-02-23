@@ -131,99 +131,102 @@ def show_metric(pid,pr):
 def begin(expid):
     expid=str(expid) #keys are strings, so cast!
     
-    experiments=experiments_model.list_all()
-    projects=projects_model.list_all()
-    agpus=available_gpus()
-    started=started_model.list_all()
-    global used_gpus
-    if len(agpus)>0 and len(list(experiments.keys()))>0:
-        if expid=="-1": #select first experiment in queue
-            for eid, exp in list(experiments.items()):
-                #if gpu is available or first available (-1)
-                if bool(exp['available']=='True') and ( (int(exp['arguments']['use_cuda']) in agpus) or (int(exp['arguments']['use_cuda'])==-1) ):
-                    expid=eid
-                    if int(exp['arguments']['use_cuda'])==-1:
-                        use_cuda=(agpus[0])
-                    else:
-                        use_cuda=int(exp['arguments']['use_cuda'])
-                    break
-                    
-        for eid, exp in list(started.items()):
-            if expid!="-1" and exp['arguments']['experiment']==experiments[expid]['arguments']['experiment']:
-                print('Log: Process ',exp['arguments']['experiment'],' is running already')
+    try:
+        experiments=experiments_model.list_all()
+        projects=projects_model.list_all()
+        agpus=available_gpus()
+        started=started_model.list_all()
+        global used_gpus
+        if len(agpus)>0 and len(list(experiments.keys()))>0:
+            if expid=="-1": #select first experiment in queue
+                for eid, exp in list(experiments.items()):
+                    #if gpu is available or first available (-1)
+                    if bool(exp['available']=='True') and ( (int(exp['arguments']['use_cuda']) in agpus) or (int(exp['arguments']['use_cuda'])==-1) ):
+                        expid=eid
+                        if int(exp['arguments']['use_cuda'])==-1:
+                            use_cuda=(agpus[0])
+                        else:
+                            use_cuda=int(exp['arguments']['use_cuda'])
+                        break
+
+            for eid, exp in list(started.items()):
+                if expid!="-1" and exp['arguments']['experiment']==experiments[expid]['arguments']['experiment']:
+                    print('Log: Process ',exp['arguments']['experiment'],' is running already')
+                    socketio.emit('job complete') 
+                    return
+
+            if not expid in list(lock_exp.keys()): #critical region lock
+                lock_exp[expid]=1
+            else:
                 socketio.emit('job complete') 
                 return
-                    
-        if not expid in list(lock_exp.keys()): #critical region lock
-            lock_exp[expid]=1
-        else:
-            socketio.emit('job complete') 
-            return
 
-        if expid!="-1":
-            used_gpus += [use_cuda]
-            exp=experiments[expid]
-            now=datetime.datetime.now(); exp['sdate']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
-            print('Log: Starting process ',exp['arguments']['experiment'])
-            args=exp['arguments']
-            if ('test' in list(exp.keys()) and exp['test']=='True'):#if testing
-                exp['log']='Errors:\n'
-                args['epochs']=len(args['inputs'])
-            elif args['resume']=='False': #if train and resume is false
-                exp['log']='Errors:\n'
+            if expid!="-1":
+                used_gpus += [use_cuda]
+                exp=experiments[expid]
+                now=datetime.datetime.now(); exp['sdate']=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
+                print('Log: Starting process ',exp['arguments']['experiment'])
+                args=exp['arguments']
+                if ('test' in list(exp.keys()) and exp['test']=='True'):#if testing
+                    exp['log']='Errors:\n'
+                    args['epochs']=len(args['inputs'])
+                elif args['resume']=='False': #if train and resume is false
+                    exp['log']='Errors:\n'
 
-            prev_gpu=args['use_cuda']
-            args['use_cuda']=str(use_cuda)
-            current_proj=projects[exp['pid']]
-            exp['progress']='0'
+                prev_gpu=args['use_cuda']
+                args['use_cuda']=str(use_cuda)
+                current_proj=projects[exp['pid']]
+                exp['progress']='0'
 
-            if ('test' in list(exp.keys()) and exp['test']=='True'):
-                if (exp['metric']=='True'):
-                    argsstr,_=dict2str_metric(args)
-                    prexec=current_proj['metric_exec']
-                    prpath=current_proj['metric_path']
+                if ('test' in list(exp.keys()) and exp['test']=='True'):
+                    if (exp['metric']=='True'):
+                        argsstr,_=dict2str_metric(args)
+                        prexec=current_proj['metric_exec']
+                        prpath=current_proj['metric_path']
+                    else:
+                        key1,key2=args['model'].split('/')
+                        nets=load_net(projects,exp['pid'],key1)
+                        argsstr=dict2str_test(args,nets)
+                        prexec=current_proj['test_exec']
+                        prpath=current_proj['test_path']
+
                 else:
-                    key1,key2=args['model'].split('/')
-                    nets=load_net(projects,exp['pid'],key1)
-                    argsstr=dict2str_test(args,nets)
-                    prexec=current_proj['test_exec']
-                    prpath=current_proj['test_path']
-                
-            else:
-                argsstr=dict2str(args)
-                prexec=current_proj['exec']
-                prpath=current_proj['path']
+                    argsstr=dict2str(args)
+                    prexec=current_proj['exec']
+                    prpath=current_proj['path']
 
-            exp['used_gpu']=args['use_cuda']
-            args['use_cuda']=prev_gpu
-            
-            started=started_model.push_back(exp)
-            started_model.save(started)
-            experiments=experiments_model.remove(expid)
-            experiments_model.save(experiments)
+                exp['used_gpu']=args['use_cuda']
+                args['use_cuda']=prev_gpu
 
-            global python_path
-            
-            command='exec '+python_path+" -u "+prexec+argsstr
-            global process
-            print(command)
-            slindex=started_model.last_index
-            process[slindex] = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE ,shell=True, cwd=prpath)
+                started=started_model.push_back(exp)
+                started_model.save(started)
+                experiments=experiments_model.remove(expid)
+                experiments_model.save(experiments)
 
-            if ('test' not in list(exp.keys()) or exp['test']=='False'):
-                progress_thread[slindex] = Thread(target=show_progress,args=(slindex,process[slindex]), daemon=True)
-                progress_thread[slindex].start()
+                global python_path
 
-            error_thread[slindex] = Thread(target=show_error,args=(slindex,process[slindex]), daemon=True)
-            error_thread[slindex].start()
+                command='exec '+python_path+" -u "+prexec+argsstr
+                global process
+                print(command)
+                slindex=started_model.last_index
+                process[slindex] = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE ,shell=True, cwd=prpath)
 
-            if (exp['metric']=='True'):
-                progress_thread[slindex] = Thread(target=show_metric,args=(slindex,process[slindex]), daemon=True)
-                progress_thread[slindex].start()
+                if ('test' not in list(exp.keys()) or exp['test']=='False'):
+                    progress_thread[slindex] = Thread(target=show_progress,args=(slindex,process[slindex]), daemon=True)
+                    progress_thread[slindex].start()
+
+                error_thread[slindex] = Thread(target=show_error,args=(slindex,process[slindex]), daemon=True)
+                error_thread[slindex].start()
+
+                if (exp['metric']=='True'):
+                    progress_thread[slindex] = Thread(target=show_metric,args=(slindex,process[slindex]), daemon=True)
+                    progress_thread[slindex].start()
 
 
-    
-        del lock_exp[expid]
+
+            del lock_exp[expid]
+    except:
+        pass
 
 
 #thread to watch running experiments
