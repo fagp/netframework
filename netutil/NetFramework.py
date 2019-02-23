@@ -32,10 +32,6 @@ warnings.filterwarnings("ignore")
 class NetFramework():
     def __init__(self, defaults_path):
 
-        torch.manual_seed(123)
-        np.random.seed(123)
-        random.seed(123)
-
         parser = argparse.ArgumentParser(description='Net framework arguments description')
         parser.add_argument('--experiment', nargs='?', type=str, default='experiment', help='Experiment name')
         parser.add_argument('--model', nargs='?', type=str, default='', help='Architecture to use')
@@ -63,7 +59,14 @@ class NetFramework():
         parser.add_argument('--lossparam', type=str, default='{}', help='Loss function parameters')
         parser.add_argument('--resume', action='store_true', help='Resume training')
 
+        parser.add_argument('--seed', nargs='?',type=int, default=123, help='Random seed (for reproducibility)')
+
         args = parser.parse_args()
+
+        if args.seed!=-1:
+            torch.manual_seed(args.seed)
+            np.random.seed(args.seed)
+            random.seed(args.seed)
 
         args.lossparam=json.loads(args.lossparam.replace("'","\""),cls=Decoder)
         args.datasetparam=json.loads(args.datasetparam.replace("'","\""),cls=Decoder)
