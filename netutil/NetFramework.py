@@ -82,7 +82,7 @@ class NetFramework():
                     except:
                         pass
 
-        json.dump(args,open(os.path.join(experimentpath,'args.json'),'w'))
+        json.dump(vars(args),open(os.path.join(experimentpath,'args.json'),'w'))
         args.folders=folders
 
         args.lossparam=json.loads(args.lossparam.replace("'","\""),cls=Decoder)
