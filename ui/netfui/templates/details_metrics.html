@@ -36,7 +36,7 @@
               <td>{{ job.arguments['pinputs'][i] }}</td>
               <td>{{ job.arguments['poutputs'][i] }}</td>
               {% for metric in job['results'].keys() %}
-              <td>{{ job['results'][metric][i] }}</td>
+              <td>{{ job['results'][metric][i+1] }}</td>
               {% endfor %}
           </tr>
           {% endfor %}
