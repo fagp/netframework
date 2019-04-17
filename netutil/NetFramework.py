@@ -50,8 +50,9 @@ class NetFramework():
         parser.add_argument('--parallel', action='store_true', help='Use multiples GPU (used only if --use_cuda>-1)')
         parser.add_argument('--epochs', nargs='?', type=int, default=1000, help='Number of epochs')
         parser.add_argument('--batch_size', nargs='?', type=int, default=1, help='Minibatch size')
-        parser.add_argument('--train_worker', nargs='?', type=int, default=1, help='Number of training workers')
-        parser.add_argument('--test_worker', nargs='?', type=int, default=1, help='Number of testing workers')
+        parser.add_argument('--batch_acc', nargs='?', type=int, default=1, help='Minibatch accumulation')
+        parser.add_argument('--train_worker', nargs='?', type=int, default=0, help='Number of training workers')
+        parser.add_argument('--test_worker', nargs='?', type=int, default=0, help='Number of testing workers')
 
         parser.add_argument('--optimizer', nargs='?', type=str, default='RMSprop', help='Optimizer to use')
         parser.add_argument('--optimizerparam', type=str, default='{}', help='Experiment optimizer parameters')
@@ -115,6 +116,7 @@ class NetFramework():
         self.folders=args.folders
         self.bestmetric=0
         self.batch_size=args.batch_size
+        self.batch_acc=args.batch_acc
 
         # Load datasets
         print('Loading dataset: ',args.dataset)
@@ -232,12 +234,13 @@ class NetFramework():
             sample = self.warp_var_mod.warp_Variable(sample,self.device)
             images=sample['image']
 
-            self.optimizer.zero_grad()
             outputs = self.net(images)
             kwarg=eval(self.losseval)
             loss=self.criterion(**kwarg)
             loss.backward()
-            self.optimizer.step()
+            if (i+1)%self.batch_acc == 0:
+                self.optimizer.step()
+                self.optimizer.zero_grad()
 
             self.trlossavg.update(loss.item(),images.size(0))
             for key,value in self.metrics_eval.items():
