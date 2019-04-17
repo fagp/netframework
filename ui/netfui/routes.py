@@ -887,8 +887,9 @@ def detailsmetrics(pid):
 
     means=dict()
     for metric, vals in job['results'].items():
-        means[metric]= np.mean(np.array(vals))
+        means[metric]= np.mean(np.array(vals[1:]))
     
+    print(job['results'])
     
     return render_template('details_metrics.html', title='Details',projects=projects,job=job, means=means)
 
