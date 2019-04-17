@@ -21,6 +21,7 @@ class TrainForm(FlaskForm):
     
     epochs = IntegerField('Epochs',validators=[DataRequired(),NumberRange(1,1000000)])
     batch_size = IntegerField('Batch Size',validators=[DataRequired(),NumberRange(1,10000000)])
+    batch_acc = IntegerField('Batch Accum',validators=[DataRequired(),NumberRange(1,10000000)])
     visdom = BooleanField('Use visdom')
     show_rate = IntegerField('Plot Rate',validators=[DataRequired(),NumberRange(0,1000)])
     print_rate = IntegerField('Print Rate',validators=[DataRequired(),NumberRange(0,1000)])
