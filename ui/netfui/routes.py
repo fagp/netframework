@@ -662,6 +662,7 @@ def experiment(pid=-1,expid=-1):
         args['lossparam']       =str(form.lossparam.data)
         args['epochs']          =str(form.epochs.data)
         args['batch_size']      =str(form.batch_size.data)
+        args['batch_acc']      =str(form.batch_acc.data)
         args['visdom']          =str(form.visdom.data)
         args['show_rate']       =str(form.show_rate.data)
         args['print_rate']      =str(form.print_rate.data)
@@ -714,6 +715,7 @@ def experiment(pid=-1,expid=-1):
         form.train_worker.data=int(job['arguments']['train_worker'])
         form.test_worker.data=int(job['arguments']['test_worker'])
         form.batch_size.data=int(job['arguments']['batch_size'])
+        form.batch_acc.data=int(job['arguments']['batch_acc'])
         form.epochs.data=int(job['arguments']['epochs'])
         form.show_rate.data=int(job['arguments']['show_rate'])
         form.print_rate.data=int(job['arguments']['print_rate'])
@@ -725,6 +727,7 @@ def experiment(pid=-1,expid=-1):
         form.train_worker.data=0
         form.test_worker.data=0
         form.batch_size.data=1
+        form.batch_acc.data=1
         form.epochs.data=1000
         form.show_rate.data=5
         form.print_rate.data=5
@@ -1161,6 +1164,7 @@ def update(expid):
         args['lossparam']       =str(form.lossparam.data)
         args['epochs']          =str(form.epochs.data)
         args['batch_size']      =str(form.batch_size.data)
+        args['batch_acc']      =str(form.batch_acc.data)
         args['visdom']          =str(form.visdom.data)
         args['show_rate']       =str(form.show_rate.data)
         args['print_rate']      =str(form.print_rate.data)
@@ -1219,6 +1223,7 @@ def update(expid):
     form.train_worker.data=int(job['arguments']['train_worker'])
     form.test_worker.data=int(job['arguments']['test_worker'])
     form.batch_size.data=int(job['arguments']['batch_size'])
+    form.batch_acc.data=int(job['arguments']['batch_acc'])
     form.epochs.data=int(job['arguments']['epochs'])
     form.show_rate.data=int(job['arguments']['show_rate'])
     form.print_rate.data=int(job['arguments']['print_rate'])
