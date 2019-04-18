@@ -715,7 +715,10 @@ def experiment(pid=-1,expid=-1):
         form.train_worker.data=int(job['arguments']['train_worker'])
         form.test_worker.data=int(job['arguments']['test_worker'])
         form.batch_size.data=int(job['arguments']['batch_size'])
-        form.batch_acc.data=int(job['arguments']['batch_acc'])
+        if 'batch_acc'in job['arguments'].keys():
+            form.batch_acc.data=int(job['arguments']['batch_acc'])
+        else:
+            form.batch_acc.data=1
         form.epochs.data=int(job['arguments']['epochs'])
         form.show_rate.data=int(job['arguments']['show_rate'])
         form.print_rate.data=int(job['arguments']['print_rate'])
@@ -1221,7 +1224,10 @@ def update(expid):
     form.train_worker.data=int(job['arguments']['train_worker'])
     form.test_worker.data=int(job['arguments']['test_worker'])
     form.batch_size.data=int(job['arguments']['batch_size'])
-    form.batch_acc.data=int(job['arguments']['batch_acc'])
+    if 'batch_acc'in job['arguments'].keys():
+            form.batch_acc.data=int(job['arguments']['batch_acc'])
+    else:
+            form.batch_acc.data=1
     form.epochs.data=int(job['arguments']['epochs'])
     form.show_rate.data=int(job['arguments']['show_rate'])
     form.print_rate.data=int(job['arguments']['print_rate'])
