@@ -240,13 +240,15 @@ class NetFramework():
             loss.backward()
             if (i+1)%self.batch_acc ==0 or (i+1)==total_train:
                 self.optimizer.step()
-                self.optimizer.zero_grad()
 
             self.trlossavg.update(loss.item(),images.size(0))
             for key,value in self.metrics_eval.items():
                 kwarg=eval(self.metrics_eval[key])
                 metric=self.metrics[key](**kwarg)
                 self.trmetrics_avg[key].update(metric.item(),images.size(0))
+
+            if (i+1)%self.batch_acc ==0 or (i+1)==total_train:
+                self.optimizer.zero_grad()
 
             batch_time.update(time.time() - end)
             end = time.time()
