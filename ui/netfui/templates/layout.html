@@ -15,16 +15,16 @@
     <script src="{{ url_for('static', filename='js/scroll-sneak.js') }}"></script>
 
     {% if title %}
-        <title>Mera UI - {{ title }}</title>
+        <title>MeraMeraUI - {{ title }}</title>
     {% else %}
-        <title>Mera UI</title>
+        <title>MeraMeraUI</title>
     {% endif %}
 </head>
 <body >
     <header class="site-header">
       <nav class="navbar navbar-expand-md navbar-dark bg-steel fixed-top">
         <div class="container-fluid">
-          <a class="navbar-brand mr-4" href="/">MeraUI</a>
+          <a class="navbar-brand mr-4" href="/">MeraMeraUI</a>
           <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
           </button>
@@ -35,6 +35,9 @@
               <a class="nav-item nav-link" href="{{ url_for('test') }}">Test</a>
               <a class="nav-item nav-link" href="{{ url_for('metric') }}">Metrics</a>
             </div>
+            {% if time %}
+            <a class="ml-2 text-white">Date on server: {{ time }}</a>
+            {% endif %}
         </div>
       </nav>
     </header>

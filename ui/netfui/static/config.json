@@ -1,11 +1,10 @@
 {
   "paths":
   {
-     "queue_path":"/project/segmentation/netfui/queue.json",
-     "done_path":"/project/segmentation/netfui/done.json",
-     "started_path":"/project/segmentation/netfui/started.json",
-     "error_path":"/project/segmentation/netfui/error.json",
-     "projects_path":"/project/segmentation/netfui/projects.json",
-     "python_path":"python"
+     "queue_path":   "queue.json",
+     "done_path":    "done.json",
+     "started_path": "started.json",
+     "error_path":   "error.json",
+     "projects_path":"projects.json"
   }
 }

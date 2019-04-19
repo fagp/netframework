@@ -16,13 +16,13 @@ import select
 import numpy as np
 
 #models-OK
-done_model = model(app.config['paths']['done_path'])
-error_model = model(app.config['paths']['error_path'])
-started_model=model(app.config['paths']['started_path'])
-experiments_model=model(app.config['paths']['queue_path'])
-projects_model=model(app.config['paths']['projects_path'])
-netfui_path= os.path.dirname( app.config['paths']['queue_path'] )
-python_path= app.config['paths']['python_path']
+done_model = model(os.path.join(app.config['root_path'], app.config['paths']['done_path'] ))
+error_model = model(os.path.join(app.config['root_path'], app.config['paths']['error_path']))
+started_model=model(os.path.join(app.config['root_path'], app.config['paths']['started_path']))
+experiments_model=model(os.path.join(app.config['root_path'], app.config['paths']['queue_path']))
+projects_model=model(os.path.join(app.config['root_path'], app.config['paths']['projects_path']))
+netfui_path= os.path.dirname(os.path.join(app.config['root_path'],  app.config['paths']['queue_path'] ))
+python_path= app.config['py_path']#app.config['paths']['python_path']
 
 #init: if there is any experiment in started then push back to queue-OK
 started=started_model.list_all() 
@@ -66,6 +66,7 @@ def show_error(pid,pr):
     except:
         pass
     print('Log: Ending error progress track')
+    socketio.emit('job complete')  
 
 def show_progress(pid,pr):
     print('Log: Train progress track')
@@ -75,7 +76,7 @@ def show_progress(pid,pr):
         try:
             #read std out
             line = pr.stdout.readline()
-            if line.decode("utf-8").find('[0/') >=0:
+            if line.decode("utf-8").find('[1/') >=0:
                 started=started_model.list_all()
                 epparse=line.decode("utf-8").split('[')
                 phase=epparse[0][2:-2]
@@ -366,7 +367,8 @@ def home():
 
     done=done_model.list_all()
     global exp_queue
-    return render_template('home.html', jobs=jobs, projects=projects, started=started, done=done, error=error,exp_queue=exp_queue,tuse_gpu=touse_gpus)
+    now=datetime.datetime.now(); ctime=str(now.month)+'/'+str(now.day)+'/'+str(now.year)+' '+str(now.hour)+':'+str(now.minute)
+    return render_template('home.html', jobs=jobs, projects=projects, started=started, done=done, error=error,exp_queue=exp_queue,tuse_gpu=touse_gpus, time=ctime)
 
 #render project-OK
 @app.route("/project", methods=['GET', 'POST'])

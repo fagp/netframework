@@ -46,7 +46,7 @@
             {{ job['progress'] }}
         </div>
         {% else %}
-        <div class="progress-bar" role="progressbar" style="width:{{ job['progress']|round|int }}%" aria-valuenow="{{ job['progress']  }}" aria-valuemin="0" aria-valuemax="100">
+        <div class="progress-bar bg-danger" role="progressbar" style="width:{{ job['progress']|round|int }}%" aria-valuenow="{{ job['progress']  }}" aria-valuemin="0" aria-valuemax="100">
             {{ job['progress'] }}
         </div>
         {% endif %}
