@@ -15,14 +15,14 @@ def loadmodel(modelname,experimentparams,config_file='defaults/modelconfig.json'
     module=model_props['module']
     model_props.pop('module',None)
 
+    for key,value in experimentparams.items():
+        model_props[key]=value
+
     if 'init' in model_props.keys():
         init_type=model_props['init']
         model_props.pop('init',None)
     else:
         init_type='xavier_normal'
-
-    for key,value in experimentparams.items():
-        model_props[key]=value
 
     cmodel=get_class(module+'.'+arch)
     net = cmodel(**model_props)
