@@ -46,6 +46,7 @@ class LandscapeVis():
         parser.add_argument('--save_rate', nargs='?',type=int, default=10, help='Save after num of iterations (if --save_rate=0 then no save is done during training)')
 
         parser.add_argument('--use_cuda', nargs='?',type=int, default=0, help='GPU device (if --use_cuda=-1 then CPU used)')
+        parser.add_argument('--use_dataloader', nargs='?',type=int, default=0, help='Use dataloaders instead dataset iteration')
         parser.add_argument('--parallel', action='store_true', help='Use multiples GPU (used only if --use_cuda>-1)')
         parser.add_argument('--epoch', nargs='?', type=int, default=-1, help='Epoch number')
         parser.add_argument('--worker', nargs='?', type=int, default=0, help='Number of testing workers')
@@ -112,12 +113,12 @@ class LandscapeVis():
         self.visdom=args.visdom
         if self.visdom==True:
             self.vis = Visdom(use_incoming_socket=False)
-            self.vis.close(env='landscape_'+args.experiment)
-            self.visplotter = gph.VisdomLinePlotter(self.vis, env_name='landscape_'+args.experiment)
-            self.visheatmap = gph.HeatMapVisdom(self.vis, env_name='landscape_'+args.experiment)
-            self.visimshow  = gph.ImageVisdom(self.vis, env_name='landscape_'+args.experiment)
-            self.vistext    = gph.TextVisdom(self.vis, env_name='landscape_'+args.experiment)
-            self.vissurf    = gph.VisdomSurface(self.vis, env_name='landscape_'+args.experiment)
+            self.vis.close(env='landscape_'+args.experiment+'_'+args.surface_name)
+            self.visplotter = gph.VisdomLinePlotter(self.vis, env_name='landscape_'+args.experiment+'_'+args.surface_name)
+            self.visheatmap = gph.HeatMapVisdom(self.vis, env_name='landscape_'+args.experiment+'_'+args.surface_name)
+            self.visimshow  = gph.ImageVisdom(self.vis, env_name='landscape_'+args.experiment+'_'+args.surface_name)
+            self.vistext    = gph.TextVisdom(self.vis, env_name='landscape_'+args.experiment+'_'+args.surface_name)
+            self.vissurf    = gph.VisdomSurface(self.vis, env_name='landscape_'+args.experiment+'_'+args.surface_name)
 
         try:
             args.xmin, args.xmax, args.xnum = [float(a) for a in args.x.split(':')]
@@ -137,6 +138,7 @@ class LandscapeVis():
         self.show_rate = args.show_rate
         self.save_rate = args.save_rate
         self.surface_name=args.surface_name
+        self.use_dataloader=args.use_dataloader
         
         self.epochs=args.epoch
         self.folders=args.folders
@@ -265,7 +267,10 @@ class LandscapeVis():
                 coord=(self.combcoordinates[0][self.cx][self.cy] ,self.combcoordinates[1][self.cx][self.cy])
                 #code for checking if exist
                 set_states(self.net.module if self.use_parallel else self.net,self.w,self.wx,self.wy, coord)
-                self.validation(cx,cy)
+                if self.use_dataloader:
+                    self.validation_dl(cx,cy)
+                else:
+                    self.validation(cx,cy)
                 if (k % self.save_rate)==0 or k==(total-1):
                     info = {'loss':self.lossmat}
                     
@@ -290,6 +295,36 @@ class LandscapeVis():
                 for v in sample.keys():
                     if isinstance(sample[v],torch.Tensor):
                         sample[v].unsqueeze_(0)
+                images=sample['image']
+                
+
+                outputs = self.net(images)
+                kwarg=eval(self.losseval)
+                loss=self.criterion(**kwarg)
+                self.lossmat[cx,cy]+=loss.item()
+
+                for key,value in self.metrics_eval.items():
+                    kwarg=eval(self.metrics_eval[key])
+                    metric=self.metrics[key](**kwarg)
+                    self.metricsmat[key][cx,cy]+=metric.item()
+                
+                if (i+1)==self.batch_size:
+                    break
+        
+        self.lossmat[cx,cy]/= i+1
+        for key,value in self.metrics_eval.items():
+            self.metricsmat[key][cx,cy]/=i+1
+
+        self.computedmat[cx,cy]=1
+        print(time.time()-ttime)
+        
+    def validation_dl(self,cx,cy): 
+        ttime=time.time()  
+        
+        print('Computing {} {}:'.format(cx,cy), end=' ')
+        with torch.no_grad():    
+            for i,sample in enumerate(self.train_loader):
+                sample = self.warp_var_mod.warp_Variable(sample,self.device)
                 images=sample['image']
                 
 
