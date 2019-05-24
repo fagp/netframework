@@ -39,6 +39,14 @@ def set_states(net, states, dx=None, dy=None, step=None):
         v.add_(d.type(v.type()))
     net.load_state_dict(new_states)
 
+def get_random_states(states):
+    """
+        Produce a random direction that is a list of random Gaussian tensors
+        with the same shape as the network's state_dict(), so one direction entry
+        per weight, including BN's running_mean/var.
+    """
+    return [torch.randn(w.size()) for k, w in states.items()]
+
 ################################################################################
 #                        Normalization Functions
 ################################################################################
@@ -69,7 +77,7 @@ def normalize_direction(direction, weights, norm='filter'):
 
 def normalize_directions_for_states(direction, states, norm='filter', ignore='biasbn'):
     assert(len(direction) == len(states))
-    for (_,d), (k, w) in zip(direction.items(), states.items()):
+    for d, (k, w) in zip(direction, states.items()):
         if d.dim() <= 1:
             if ignore == 'biasbn':
                 d.fill_(0) # ignore directions for weights with 1 dimension
