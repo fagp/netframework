@@ -267,7 +267,6 @@ class LandscapeVis():
                         self.validation(cx,cy)
                 else:
                     self.validation_im(cx,cy,self.image_num)
-
                 if (k % self.save_rate)==0 or k==(total-1):
                     info = {'loss':self.lossmat}
                     
