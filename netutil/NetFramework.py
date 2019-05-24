@@ -425,7 +425,7 @@ class NetFramework():
                     self.vdmetrics_avg[metric].load(narray.tolist(),1)
 
         else:
-            raise 'Model not found'
+            raise Exception('Model not found')
 
     def resume(self):
         if os.path.isdir(self.folders['model_path']):

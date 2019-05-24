@@ -36,7 +36,7 @@ def get_model_path(name, config_file='defaults/modelconfig.json'):
     if name=='':
         name=list(model_config.keys())[0]
     if name not in model_config:
-        raise 'Model '+name+' not found in '+config_file
+        raise Exception('Model '+name+' not found in '+config_file)
     return model_config[name]
 
 def init_params(net,init_type):
@@ -56,8 +56,23 @@ def init_params(net,init_type):
                 init.normal_(m.weight, std=1e-3)
                 if m.bias is not None:
                     init.constant_(m.bias, 0)
+    elif init_type=='xavier_uniform':
+        for m in net.modules():
+            if isinstance(m, nn.Conv2d):
+                init.xavier_uniform_(m.weight, gain=1)
+                if m.bias is not None:
+                    init.constant_(m.bias, 0)
+
+            elif isinstance(m, nn.BatchNorm2d):
+                init.constant_(m.weight, 1)
+                init.constant_(m.bias, 0)
+
+            elif isinstance(m, nn.Linear):
+                init.uniform_(m.weight, 0, 1)
+                if m.bias is not None:
+                    init.constant_(m.bias, 0)
     elif os.path.exists(init_type):
         checkpoint = torch.load(init_type,map_location='cpu')
         net.load_state_dict(checkpoint['net'])
     else:
-        raise 'Initialization type ' +init_type+ ' not found'
+        raise Exception('Initialization type ' +init_type+ ' not found')

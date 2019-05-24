@@ -2,6 +2,28 @@ import numpy as np
 from visdom import Visdom
 from skimage.transform import rescale
 
+class VisdomSurface(object):
+    """Plots to Visdom"""
+    
+    def __init__(self, vis, env_name='main'):
+        self.viz = vis
+        self.env = env_name
+        self.surface = {}
+    
+    def show(self, var_name, split_name, M):
+        if var_name not in self.surface:
+            self.surface[var_name] = self.viz.surf(X=np.array([M]),
+                env=self.env, 
+                opts=dict(
+                legend=[split_name],
+                title=var_name
+            ))
+        else:
+            self.viz.surf(X=np.array([M]), 
+                env=self.env, 
+                win=self.surface[var_name]
+                )
+                
 class VisdomLinePlotter(object):
     """Plots to Visdom"""
     
